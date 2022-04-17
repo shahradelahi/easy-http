@@ -1,9 +1,9 @@
 {
    "name": "shahradelahi/easy-http",
-   "description": "description",
+   "description": "A Easy HTTP Client library for PHP",
    "minimum-stability": "stable",
    "license": "MIT",
-   "version": "v1.0.0",
+   "version": "v1.0.1",
    "authors": [
 	  {
 		 "name": "Shahrad Elahi",

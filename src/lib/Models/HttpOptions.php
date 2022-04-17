@@ -34,7 +34,11 @@ class HttpOptions
             if ($key == 'body') {
                 $this->setBody($value);
             } else {
-                $this->{$key} = $value;
+                if (property_exists($this, $key)) {
+                    $this->{$key} = $value;
+                } else {
+                    throw new \InvalidArgumentException("Invalid option: $key");
+                }
             }
         }
     }
@@ -53,6 +57,16 @@ class HttpOptions
         } else {
             $this->body = $body;
         }
+    }
+
+    /**
+     * Get Query String
+     *
+     * @return string
+     */
+    public function getQueryString(): string
+    {
+        return http_build_query($this->queries);
     }
 
     /**

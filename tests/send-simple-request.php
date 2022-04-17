@@ -28,3 +28,13 @@ $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
     ]
 ]);
 echo $Response->body;
+
+// =============================== ***** =============================== //
+
+$Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
+    'queries' => [
+        'name' => 'John Doe',
+        'age' => '25'
+    ]
+]);
+echo $Response->body;
