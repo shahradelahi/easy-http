@@ -12,7 +12,7 @@ Easy Http is a lightweight HTTP client that is easy to use and integrates with y
 #### Installation
 
 ```sh
-composer require easyhttp/easyhttp
+composer require shahradelahi/easy-http
 ```
 
 <details>
@@ -33,7 +33,7 @@ php composer.phar install
 Composer not found? Use this command instead:
 
 ```
-php composer.phar require "shahradelahi/coinmarketcap"
+php composer.phar require "shahradelahi/easy-http"
 ```
 
 #### Windows:
