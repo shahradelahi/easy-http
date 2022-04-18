@@ -6,7 +6,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $Response = (new \EasyHttp\Client())->request('GET', 'https://httpbin.org/get');
 echo $Response->body;
 
-// =============================== ***** =============================== //
+// --------------------- ====== --------------------- //
 
 $Response = (new \EasyHttp\Client())->post('https://httpbin.org/post', [
     'body' => [
@@ -19,7 +19,7 @@ $Response = (new \EasyHttp\Client())->post('https://httpbin.org/post', [
 ]);
 echo $Response->body;
 
-// =============================== ***** =============================== //
+// --------------------- ====== --------------------- //
 
 $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
     'headers' => [
@@ -29,7 +29,7 @@ $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
 ]);
 echo $Response->body;
 
-// =============================== ***** =============================== //
+// --------------------- ====== --------------------- //
 
 $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
     'queries' => [

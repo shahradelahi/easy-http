@@ -29,10 +29,6 @@ class Client
      */
     public function request(string $method, string $uri, array|HttpOptions $options = []): HttpResponse
     {
-        if (gettype($options) === 'array') {
-            $options = new HttpOptions($options);
-        }
-
         $CurlHandle = $this->createCurlHandler($method, $uri, $options);
 
         curl_exec($CurlHandle);
@@ -59,13 +55,11 @@ class Client
         $multi_handler = curl_multi_init();
         foreach ($requests as $request) {
 
-            [$method, $uri, $options] = $request;
-
-            if (gettype($request['options']) === 'array') {
-                $options = new HttpOptions($request['options']);
-            }
-
-            $CurlHandle = $this->createCurlHandler($method, $uri, $options);
+            $CurlHandle = $this->createCurlHandler(
+                $request['method'],
+                $request['uri'],
+                $request['options'] ?? []
+            );
             $handlers[] = $CurlHandle;
             curl_multi_add_handle($multi_handler, $CurlHandle);
 
@@ -96,14 +90,18 @@ class Client
     /**
      * Create curl handler.
      *
-     * @param string $method
+     * @param ?string $method
      * @param string $uri
      * @param array|HttpOptions $options
      * @return ?CurlHandle
      */
-    private function createCurlHandler(string $method, string $uri, array|HttpOptions $options = []): ?CurlHandle
+    private function createCurlHandler(?string $method, string $uri, array|HttpOptions $options = []): ?CurlHandle
     {
         $cHandler = curl_init();
+
+        if (gettype($options) === 'array') {
+            $options = new HttpOptions($options);
+        }
 
         if (count($options->queries) > 0) {
             if (!str_contains($uri, '?')) $uri .= '?';
@@ -124,6 +122,7 @@ class Client
         }
 
         if ($options->body) {
+            curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'POST');
             curl_setopt($cHandler, CURLOPT_POSTFIELDS, $options->body);
             curl_setopt($cHandler, CURLOPT_POST, true);
         }

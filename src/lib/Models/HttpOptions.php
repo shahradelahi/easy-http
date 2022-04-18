@@ -72,12 +72,12 @@ class HttpOptions
     /**
      * @var array|null
      */
-    public ?array $headers;
+    public ?array $headers = [];
 
     /**
      * @var array|null
      */
-    public ?array $queries;
+    public ?array $queries = [];
 
     /**
      * @var string|null

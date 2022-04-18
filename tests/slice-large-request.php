@@ -3,6 +3,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // =============================== ***** =============================== //
 
+// Specifics and defines the test environment
 $endpoint = 'https://scanner.tradingview.com/crypto/scan';
 $post = [
     'symbols' => [
@@ -23,8 +24,9 @@ $post = [
     'range' => []
 ];
 
-// =============================== ***** =============================== //
+// --------------------- ====== --------------------- //
 
+// Initializes the request
 $requests = [];
 for ($i = 0; $i < 1000; $i += 100) {
 
@@ -43,12 +45,12 @@ for ($i = 0; $i < 1000; $i += 100) {
 
 }
 
-// =============================== ***** =============================== //
+// --------------------- ====== --------------------- //
 
 $merger = [];
-$responses = (new \EasyHttp\Client())->bulk($requests);
+$responses = (new \EasyHttp\Client())->bulk($requests); # Bulk request
 foreach ($responses as $response) {
-    $merger = array_merge($merger, json_decode($response->getBody(), true));
+    $merger = array_merge($merger, json_decode($response->getBody(), true)); # Merge responses
 }
 
-echo '<pre>' . json_encode($merger, JSON_PRETTY_PRINT) . '</pre>';
+echo '<pre>' . json_encode($merger, JSON_PRETTY_PRINT) . '</pre>'; # Prints the result
