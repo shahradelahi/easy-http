@@ -1,6 +1,6 @@
 <?php
 
-namespace EasyHttp\Utils;
+namespace EasyHttp\Util;
 
 /**
  * Utils

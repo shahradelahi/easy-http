@@ -1,6 +1,6 @@
 <?php
 
-namespace EasyHttp\Models;
+namespace EasyHttp\Model;
 
 /**
  * Http Response

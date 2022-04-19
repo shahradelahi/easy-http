@@ -1,6 +1,6 @@
 <?php
 
-namespace EasyHttp\Models;
+namespace EasyHttp\Model;
 
 /**
  * Http Options
@@ -31,8 +31,8 @@ class HttpOptions
     public function setOptions(array $options): void
     {
         foreach ($options as $key => $value) {
-            if ($key == 'body') {
-                $this->setBody($value);
+            if (method_exists($this, 'set' . ucfirst($key))) {
+                $this->{'set' . ucfirst($key)}($value);
             } else {
                 if (property_exists($this, $key)) {
                     $this->{$key} = $value;
@@ -60,6 +60,17 @@ class HttpOptions
     }
 
     /**
+     * Set proxy server
+     *
+     * @param array $proxy ["host", "port", "user", "pass"]
+     * @return void
+     */
+    public function setProxy(array $proxy): void
+    {
+        $this->proxy = (new ProxyServer())->setProxy($proxy);
+    }
+
+    /**
      * Get Query String
      *
      * @return string
@@ -70,18 +81,58 @@ class HttpOptions
     }
 
     /**
-     * @var array|null
+     * Set Curl Options
+     *
+     * @param array $options [{"CURLOPT_*": "value"}, ...]
+     * @return void
+     */
+    public function setCurlOptions(array $options): void
+    {
+        if (count($options) > 0) {
+            foreach ($options as $option => $value) {
+                if (str_starts_with($option, 'CURLOPT_')) {
+                    $this->curlOptions[$option] = $value;
+                } else {
+                    throw new \InvalidArgumentException("Invalid option: $option");
+                }
+            }
+        }
+    }
+
+    /**
+     * @var ?array
      */
     public ?array $headers = [];
 
     /**
-     * @var array|null
+     * @var ?array
      */
     public ?array $queries = [];
 
     /**
-     * @var string|null
+     * @var ?string
      */
     public ?string $body = null;
+
+    /**
+     * The proxy server to use
+     *
+     * @var ?ProxyServer
+     */
+    public ?ProxyServer $proxy = null;
+
+    /**
+     * Add specific opt to curl
+     *
+     * @var ?array
+     */
+    public ?array $curlOptions = [];
+
+    /**
+     * The timeout of the request
+     *
+     * @var ?int
+     */
+    public ?int $timeout = null;
 
 }

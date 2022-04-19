@@ -2,8 +2,8 @@
 
 namespace EasyHttp\Traits;
 
-use EasyHttp\Models\HttpOptions;
-use EasyHttp\Models\HttpResponse;
+use EasyHttp\Model\HttpOptions;
+use EasyHttp\Model\HttpResponse;
 
 /**
  * Client Trait

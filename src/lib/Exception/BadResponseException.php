@@ -1,15 +1,15 @@
 <?php
 
-namespace EasyHttp\Exceptions;
+namespace EasyHttp\Exception;
 
 /**
- * Invalid Argument Exception
+ * Bad Response Exception
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
  */
-class InvalidArgumentException extends \Exception
+class BadResponseException extends \Exception
 {
-    protected $message = 'Invalid argument';
+    protected $message = 'Bad response from server';
 }
