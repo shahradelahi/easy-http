@@ -86,9 +86,9 @@ class HttpResponse
     /**
      * Get info from the curl handle
      *
-     * @return mixed
+     * @return CurlInfo|false
      */
-    public function getCurlInfo(): CurlInfo
+    public function getCurlInfo(): CurlInfo|false
     {
         if (empty($this->curlHandle)) return false;
         return new CurlInfo(curl_getinfo($this->curlHandle));

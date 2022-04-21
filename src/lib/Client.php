@@ -6,6 +6,7 @@ use CurlHandle;
 use EasyHttp\Model\DownloadResult;
 use EasyHttp\Model\HttpOptions;
 use EasyHttp\Model\HttpResponse;
+use EasyHttp\Model\UploadResult;
 use EasyHttp\Traits\ClientTrait;
 use EasyHttp\Util\Utils;
 
@@ -34,6 +35,13 @@ class Client
      * @var ?string
      */
     private ?string $tempDir;
+
+    /**
+     * The Max count of chunk to download file
+     *
+     * @var int
+     */
+    public int $maxChunkCount = 10;
 
     /**
      * The constructor of the client
@@ -222,9 +230,8 @@ class Client
         }
 
         # Set headers
-        if ($fetchedHeaders != []) {
-            curl_setopt($cHandler, CURLOPT_HTTPHEADER, $fetchedHeaders);
-        }
+        curl_setopt($cHandler, CURLOPT_HTTPHEADER, $fetchedHeaders ?? []);
+
 
         # Add body if we have one.
         if ($options->body) {
@@ -247,16 +254,12 @@ class Client
         curl_setopt($cHandler, CURLOPT_FOLLOWLOCATION, true);
 
         # Add and override the custom curl options.
-        if (count($options->curlOptions) > 0) {
-            foreach ($options->curlOptions as $option => $value) {
-                curl_setopt($cHandler, $option, $value);
-            }
+        foreach ($options->curlOptions as $option => $value) {
+            curl_setopt($cHandler, $option, $value);
         }
 
         # if we have a timeout, set it.
-        if ($options->timeout != null) {
-            curl_setopt($cHandler, CURLOPT_TIMEOUT, $options->timeout);
-        }
+        curl_setopt($cHandler, CURLOPT_TIMEOUT, $options->timeout ?? 10);
 
         # If self-signed certs are allowed, set it.
         if ($this->isSelfSigned === true) {
@@ -288,8 +291,9 @@ class Client
     /**
      * Download large files.
      *
-     * This method is used to download large files with
-     * creating multiple requests.
+     * This method is used to download large files with creating multiple requests.
+     *
+     * Change `max_chunk_count` variable to change the number of chunks. (default: 10)
      *
      * @param string $url The direct url to the file.
      * @param array|HttpOptions $options The options to use.
@@ -315,7 +319,7 @@ class Client
         }
 
         $fileSize = $this->getFileSize($url);
-        $chunkSize = $this->getChunkSize($fileSize);
+        $chunkSize = $this->getChunkSize($fileSize, $this->maxChunkCount);
 
         $result = new DownloadResult();
 
@@ -360,25 +364,49 @@ class Client
     }
 
     /**
-     * Download a chunk of a file.
+     * Upload single or multiple files with request method of POST.
      *
-     * @param DownloadResult $result The result object.
-     * @param HttpOptions $options The options to use.
-     * @param array $input ['id', 'url', 'range'=> "start-end"]
+     * @param string $url The direct url to the file.
+     * @param string|array $filePath The path to the file.
+     * @param array|HttpOptions $options The options to use.
      *
-     * @return void
+     * @return UploadResult
      */
-    private function downloadChunk(DownloadResult &$result, HttpOptions $options, array $input): void
+    public function upload(string $url, string|array $filePath, array|HttpOptions $options = []): UploadResult
     {
-        $options->setCurlOptions([
-            CURLOPT_RANGE => $input['range']
-        ]);
-        $response = self::get($input['url'], $options);
-        $result->addChunk(
-            $input['id'],
-            $response->getBody(),
-            $response->getCurlInfo()->TOTAL_TIME
-        );
+        if (gettype($options) === 'array') {
+            $options = new HttpOptions(
+                $this->getOptions($options)
+            );
+        }
+
+        if (gettype($filePath) === 'string') {
+            $filePath = [$filePath];
+        }
+
+        $result = new UploadResult();
+        $result->startTime = microtime(true);
+
+        foreach ($filePath as $file) {
+            $options->addMultiPart('file', [
+                'name' => basename($file),
+                'contents' => fopen($file, 'r')
+            ]);
+        }
+
+        $response = $this->request('POST', $url, array_merge($options->toArray(), [
+            'header' => [
+                'Content-Type' => 'multipart/form-data'
+            ]
+        ]));
+
+        $result->response = $response;
+        $result->endTime = microtime(true);
+        if ($response->getStatusCode() === 200) {
+            $result->success = true;
+        }
+
+        return $result;
     }
 
     /**
@@ -404,21 +432,17 @@ class Client
     /**
      * Get the size of each chunk.
      *
-     * For default, we're using (fileSize/5) as max chunk size. If the file size
-     * is smaller than 5MB, we'll use the file size as chunk size.
+     * For default, we're dividing filesize to 10 as max size of each chunk.
+     * If the file size was smaller than 2MB, we'll use the filesize as single chunk.
      *
      * @param int $fileSize The file size.
-     * @param ?int $maxChunkSize The maximum chunk size. (default: fileSize/5)
-     *
      * @return int
      */
-    private function getChunkSize(int $fileSize, int $maxChunkSize = null): int
+    private function getChunkSize(int $fileSize): int
     {
-        if ($maxChunkSize === null) {
-            $maxChunkSize = $fileSize / 5;
-        }
+        $maxChunkSize = $fileSize / $this->maxChunkCount;
 
-        if ($fileSize <= 5 * 1024 * 1024) {
+        if ($fileSize <= 2 * 1024 * 1024) {
             return $fileSize;
         }
 

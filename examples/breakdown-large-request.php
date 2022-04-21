@@ -3,11 +3,6 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
 
 // =============================== ***** =============================== //
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// --------------------- ====== --------------------- //
-
 echo <<<HTML
 <p>
     <h1>Breakdown Large Request</h1>
@@ -20,7 +15,7 @@ HTML;
 // --------------------- ====== --------------------- //
 
 $client = new \EasyHttp\Client();
-$endpoint = 'https://scanner.tradingview.com/america/scan'; // <-- Your endpoint here
+$endpoint = 'https://scanner.tradingview.com/america/scan';
 $post = [
     'filter' => [
         [
@@ -45,12 +40,6 @@ $post = [
     'options' => [
         'lang' => "en",
         'active_symbols_only' => true,
-    ],
-    'symbols' => [
-        'tickers' => [],
-        'query' => [
-            'types' => []
-        ]
     ],
     'markets' => [
         "america"
@@ -170,12 +159,10 @@ for ($i = 0; $i < 2000; $i += 500) {
 
 // --------------------- ====== --------------------- //
 
-$total = 0;
 $start = microtime(true);
 $responses = $client->bulk($requests);
 foreach ($responses as $response) {
     $Data = json_decode($response->getBody(), true);
-    $total += $response->getCurlInfo()->TOTAL_TIME;
 }
 $Memory = \EasyHttp\Util\Utils::bytesToHuman(memory_get_usage());
 echo '<pre>' . "Bulk Request - Total time: " . (microtime(true) - $start) . " - Memory: $Memory" . '</pre>';

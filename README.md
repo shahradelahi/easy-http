@@ -2,6 +2,7 @@
 > ***Pull requests are welcome.***
 
 # Easy Http
+
 [![Build Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/build.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/build-status/master)
 [![Coverage Status](https://coveralls.io/repos/shahradelahi/easy-http/badge.png?branch=master)](https://coveralls.io/r/shahradelahi/easy-http?branch=master)
 [![Code Quality](https://img.shields.io/scrutinizer/g/shahradelahi/easy-http/master.svg?style=flat)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?b=master)
@@ -51,6 +52,7 @@ php composer.phar require "shahradelahi/easy-http"
 </details>
 
 #### Getting started
+
 ```php
 $client = new \EasyHttp\Client();
 $response = $client->get('https://httpbin.org/get');
@@ -63,14 +65,17 @@ echo $response->getBody(); // {"args":{},"headers":{},"origin":"**", ...}
 =========
 
 ### Documentation
-We've created some sample of usage in below and if you have questions or want a new feature, please feel free to open [an issue](https://github.com/shahradelahi/easy-http/issues/new).
+
+We've created some sample of usage in below and if you have questions or want a new feature, please feel free to
+open [an issue](https://github.com/shahradelahi/easy-http/issues/new).
 
 * [Send simple request](/examples/send-simple-request.php)
-* [Breakdown of a large request into pieces](/examples/breakdown-large-request.php)
+* [Breakdown of a large request into pieces](/docs/breakdown-large-request.md)
 * [Send multiple requests at once](/docs/send-multiple-requests.md)
 * [Download large files](/examples/download-large-file.php)
 
 ### License
+
 ```
 MIT License
 

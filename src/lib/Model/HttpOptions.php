@@ -49,6 +49,13 @@ class HttpOptions
     public ?int $timeout = null;
 
     /**
+     * The multipart data
+     *
+     * @var ?array
+     */
+    public ?array $multipart = null;
+
+    /**
      * Http Options constructor.
      *
      * @param array $options
@@ -65,14 +72,11 @@ class HttpOptions
      */
     public function toArray(): array
     {
-        return [
-            'headers' => $this->headers,
-            'queries' => $this->queries,
-            'body' => $this->body,
-            'proxy' => $this->proxy,
-            'curlOptions' => $this->curlOptions,
-            'timeout' => $this->timeout
-        ];
+        $result = [];
+        foreach (get_object_vars($this) as $key => $value) {
+            $result[$key] = $value;
+        }
+        return $result;
     }
 
     /**
@@ -148,6 +152,19 @@ class HttpOptions
                 $this->curlOptions[$option] = $value;
             }
         }
+    }
+
+    /**
+     * @param string $string
+     * @param array $array
+     * @return void
+     */
+    public function addMultiPart(string $string, array $array): void
+    {
+        $this->multipart[] = [
+            'name' => $string,
+            'contents' => $array
+        ];
     }
 
 }

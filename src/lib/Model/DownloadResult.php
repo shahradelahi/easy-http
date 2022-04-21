@@ -78,14 +78,22 @@ class DownloadResult
      */
     public function addChunk(string $id, ?string $body, float $elapsedTime): void
     {
-        $save = $this->saveChunk($id, $body);
-        $this->downloads[] = [
+        $data = [
             'id' => $id,
-            'location' => $save ?? null,
-            'size' => strlen($body),
+            'location' => null,
+            'size' => 0,
             'elapsed_time' => $elapsedTime,
-            'status' => $save ? 'saved' : 'failed',
+            'status' => 'failed',
         ];
+        if ($body !== null) {
+            $save = $this->saveChunk($id, $body);
+            $data = array_merge($data, [
+                'location' => $save ?? null,
+                'size' => strlen($body),
+                'status' => $save ? 'saved' : 'failed',
+            ]);
+        }
+        $this->downloads[] = $data;
     }
 
     /**
@@ -123,7 +131,9 @@ class DownloadResult
      */
     public function save(string $filePath): bool
     {
-        if (!file_exists(pathinfo($filePath, PATHINFO_DIRNAME))) {
+        $pathInfo = pathinfo($filePath, PATHINFO_DIRNAME);
+        if (gettype($pathInfo) != "string") $pathInfo = $pathInfo['dirname'];
+        if (!file_exists($pathInfo)) {
             throw new \InvalidArgumentException('The directory does not exist');
         }
         $result = $this->mergeChunks();
