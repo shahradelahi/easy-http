@@ -22,18 +22,18 @@ class UploadResult
     public string $id;
 
     /**
-     * Start time of the upload in microseconds
+     * Start time of the upload in timestamp.
      *
-     * @var float
+     * @var int
      */
-    public float $startTime;
+    public int $startTime;
 
     /**
-     * End time of the upload in microseconds
+     * End time of the upload in timestamp.
      *
-     * @var float
+     * @var int
      */
-    public float $endTime;
+    public int $endTime;
 
     /**
      * The upload status

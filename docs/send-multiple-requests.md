@@ -90,3 +90,5 @@ foreach ($responses as $response) {
 ```
 
 </details>
+
+[< Back](../README.md#documentation) | [Go to top](#send-multiple-requests-at-once)

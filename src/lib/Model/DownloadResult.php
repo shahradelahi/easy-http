@@ -48,18 +48,18 @@ class DownloadResult
     public int $chunks;
 
     /**
-     * Start time of the download in microseconds
+     * Start time of the download in timestamp.
      *
-     * @var float
+     * @var int
      */
-    public float $startTime;
+    public int $startTime;
 
     /**
-     * End time of the download in microseconds
+     * End time of the download in timestamp.
      *
-     * @var float
+     * @var int
      */
-    public float $endTime;
+    public int $endTime;
 
     /**
      * The downloaded chunks

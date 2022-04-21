@@ -78,15 +78,4 @@ class Utils
         }
     }
 
-    /**
-     * The microtime as float
-     *
-     * @return float
-     */
-    public static function getMicroTime(): float
-    {
-        return microtime(true);
-    }
-
-
 }

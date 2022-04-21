@@ -137,3 +137,5 @@ The result of this example is showing us that the bulk request is much faster th
 Normal CURL - Total time: 6.0051791667938 - Memory: 10.21 MiB
 Bulk Request - Total time: 2.0174889564514 - Memory: 7.91 MiB
 ```
+
+[< Back](../README.md#documentation) | [Go to top](#breakdown-of-large-request)

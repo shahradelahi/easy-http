@@ -94,12 +94,13 @@ class Client
     public function request(string $method, string $uri, array|HttpOptions $options = []): HttpResponse
     {
         $CurlHandle = $this->createCurlHandler($method, $uri, $options);
+        if (!$CurlHandle) throw new \RuntimeException('Curl handle has not been created');
 
         $result = new HttpResponse();
         $result->setCurlHandle($CurlHandle);
 
         $response = curl_exec($CurlHandle);
-        if (curl_errno($CurlHandle)) {
+        if (curl_errno($CurlHandle) || !$response) {
             $result->setError(curl_error($CurlHandle));
             $result->setErrorCode(curl_errno($CurlHandle));
             return $result;
@@ -107,8 +108,8 @@ class Client
 
         $result->setStatusCode(curl_getinfo($CurlHandle, CURLINFO_HTTP_CODE));
         $result->setHeaderSize(curl_getinfo($CurlHandle, CURLINFO_HEADER_SIZE));
-        $result->setHeaders(substr($response, 0, $result->getHeaderSize()));
-        $result->setBody(substr($response, $result->getHeaderSize()));
+        $result->setHeaders(substr((string)$response, 0, $result->getHeaderSize()));
+        $result->setBody(substr((string)$response, $result->getHeaderSize()));
 
         curl_close($CurlHandle);
 
@@ -134,6 +135,7 @@ class Client
                 $request['uri'],
                 $request['options'] ?? []
             );
+            if (!$CurlHandle) throw new \RuntimeException('Curl handle has not been created');
             $handlers[] = $CurlHandle;
             curl_multi_add_handle($multi_handler, $CurlHandle);
 
@@ -185,11 +187,12 @@ class Client
      * @param string $uri
      * @param array|HttpOptions $options
      *
-     * @return ?CurlHandle
+     * @return false|CurlHandle
      */
-    private function createCurlHandler(?string $method, string $uri, array|HttpOptions $options = []): ?CurlHandle
+    private function createCurlHandler(?string $method, string $uri, array|HttpOptions $options = []): false|CurlHandle
     {
-        $cHandler = curl_init();
+        $handler = curl_init();
+        if (is_resource($handler) || !$handler) return false;
 
         if (gettype($options) === 'array') {
             $options = new HttpOptions(
@@ -202,11 +205,11 @@ class Client
             $uri .= $options->getQueryString();
         }
 
-        curl_setopt($cHandler, CURLOPT_URL, $uri);
+        curl_setopt($handler, CURLOPT_URL, $uri);
 
-        $this->setCurlOpts($cHandler, $method, $options);
+        $this->setCurlOpts($handler, $method, $options);
 
-        return $cHandler;
+        return $handler;
     }
 
     /**
@@ -319,7 +322,7 @@ class Client
         }
 
         $fileSize = $this->getFileSize($url);
-        $chunkSize = $this->getChunkSize($fileSize, $this->maxChunkCount);
+        $chunkSize = $this->getChunkSize($fileSize);
 
         $result = new DownloadResult();
 
@@ -331,7 +334,7 @@ class Client
         $result->chunkSize = $chunkSize;
         $result->chunks = ceil($fileSize / $chunkSize);
 
-        $result->startTime = microtime(true);
+        $result->startTime = time();
 
         $requests = [];
         for ($i = 0; $i < $result->chunks; $i++) {
@@ -358,7 +361,7 @@ class Client
             );
         }
 
-        $result->endTime = microtime(true);
+        $result->endTime = time();
 
         return $result;
     }
@@ -385,7 +388,7 @@ class Client
         }
 
         $result = new UploadResult();
-        $result->startTime = microtime(true);
+        $result->startTime = time();
 
         foreach ($filePath as $file) {
             $options->addMultiPart('file', [
@@ -400,8 +403,8 @@ class Client
             ]
         ]));
 
+        $result->endTime = time();
         $result->response = $response;
-        $result->endTime = microtime(true);
         if ($response->getStatusCode() === 200) {
             $result->success = true;
         }
@@ -450,3 +453,9 @@ class Client
     }
 
 }
+
+// Command to merge last 3 commit on GitHub:
+// git merge -s ours HEAD~3
+// git push origin master
+// git push origin HEAD:master
+// git push origin HEAD~3:master
