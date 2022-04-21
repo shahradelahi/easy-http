@@ -195,9 +195,7 @@ class Client
         if (is_resource($handler) || !$handler) return false;
 
         if (gettype($options) === 'array') {
-            $options = new HttpOptions(
-                $this->getOptions($options)
-            );
+            $options = new HttpOptions($options);
         }
 
         if (count($options->queries) > 0) {
@@ -272,26 +270,6 @@ class Client
     }
 
     /**
-     * Initialize options from array.
-     *
-     * @param array $options
-     * @return array
-     */
-    private function getOptions(array $options): array
-    {
-        $defaults = [
-            'headers' => [],
-            'body' => null,
-            'timeout' => null,
-            'proxy' => null,
-            'curlOptions' => [],
-            'queries' => []
-        ];
-
-        return array_merge($defaults, $options);
-    }
-
-    /**
      * Download large files.
      *
      * This method is used to download large files with creating multiple requests.
@@ -316,9 +294,7 @@ class Client
         }
 
         if (gettype($options) === 'array') {
-            $options = new HttpOptions(
-                $this->getOptions($options)
-            );
+            $options = new HttpOptions($options);
         }
 
         $fileSize = $this->getFileSize($url);
@@ -378,9 +354,7 @@ class Client
     public function upload(string $url, string|array $filePath, array|HttpOptions $options = []): UploadResult
     {
         if (gettype($options) === 'array') {
-            $options = new HttpOptions(
-                $this->getOptions($options)
-            );
+            $options = new HttpOptions($options);
         }
 
         if (gettype($filePath) === 'string') {
