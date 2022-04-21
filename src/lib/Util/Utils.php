@@ -30,4 +30,53 @@ class Utils
         return $url;
     }
 
+    /**
+     * Generates a random string
+     *
+     * @param int $length The length of the string
+     * @return string
+     */
+    public static function randomString(int $length = 10): string
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
+    }
+
+    /**
+     * Make Json string pretty
+     *
+     * @param string $json The json string
+     * @return string
+     */
+    public static function prettyJson(string $json): string
+    {
+        return json_encode(json_decode($json), JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * Convert bytes to human-readable format
+     *
+     * @param int $bytes The bytes
+     * @param bool $binaryPrefix Whether to use binary prefixes
+     * @return string
+     */
+    public static function bytesToHuman(int $bytes, bool $binaryPrefix = true): string
+    {
+        if ($binaryPrefix) {
+            $unit = array('B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB');
+            if ($bytes == 0) return '0 ' . $unit[0];
+            return @round($bytes / pow(1024, ($i = floor(log($bytes, 1024)))), 2) . ' ' . ($unit[$i] ?? 'B');
+        } else {
+            $unit = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+            if ($bytes == 0) return '0 ' . $unit[0];
+            return @round($bytes / pow(1000, ($i = floor(log($bytes, 1000)))), 2) . ' ' . ($unit[$i] ?? 'B');
+        }
+    }
+
+
 }

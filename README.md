@@ -2,12 +2,20 @@
 > ***Pull requests are welcome.***
 
 # Easy Http
-Easy Http is a lightweight HTTP client that is easy to use and integrates with your existing PHP application.
+[![Build Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/build.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/build-status/master)
+[![Coverage Status](https://coveralls.io/repos/shahradelahi/easy-http/badge.png?branch=master)](https://coveralls.io/r/shahradelahi/easy-http?branch=master)
+[![Code Quality](https://img.shields.io/scrutinizer/g/shahradelahi/easy-http/master.svg?style=flat)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?b=master)
+[![Latest Stable Version](https://img.shields.io/packagist/v/shahradelahi/easy-http.svg)](https://packagist.org/packages/shahradelahi/easy-http)
+[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D8.0-8892BF.svg)](https://php.net/)
+[![License](https://img.shields.io/packagist/l/shahradelahi/easy-http.svg)](https://github.com/shahradelahi/easy-http/LICENSE)
+
+EasyHttp is a lightweight HTTP client that is easy to use and integrates with your existing PHP application.
 
 * Simple interface for building query strings, headers, and body.
 * Supports all HTTP methods, and supports streaming of large files.
 * **No dependency**, no need to install any third-party libraries.
-* Supports multiple/bulk requests.
+* Supports multiple/bulk requests and downloads large files.
+* And much more!
 
 #### Installation
 
@@ -52,12 +60,15 @@ echo $response->getHeaderLine('content-type'); // 'application/json'
 echo $response->getBody(); // {"args":{},"headers":{},"origin":"**", ...}
 ```
 
+=========
+
 ### Documentation
 We've created some sample of usage in below and if you have questions or want a new feature, please feel free to open [an issue](https://github.com/shahradelahi/easy-http/issues/new).
 
-* [Send simple request](/tests/send-simple-request.php)
-* [Slice a Large Data to pieces](/tests/slice-large-request.php)
-* [Send multiple requests at once](/tests/send-multiple-requests.php)
+* [Send simple request](/examples/send-simple-request.php)
+* [Breakdown of a large request into pieces](/examples/breakdown-large-request.php)
+* [Send multiple requests at once](/docs/send-multiple-requests.md)
+* [Download large files](/examples/download-large-file.php)
 
 ### License
 ```

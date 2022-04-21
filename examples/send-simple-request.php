@@ -4,7 +4,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
 // =============================== ***** =============================== //
 
 $Response = (new \EasyHttp\Client())->request('GET', 'https://httpbin.org/get');
-echo $Response->body;
+echo '<pre>' . $Response->getBody() . '</pre>';
 
 // --------------------- ====== --------------------- //
 
@@ -17,7 +17,7 @@ $Response = (new \EasyHttp\Client())->post('https://httpbin.org/post', [
         'Content-Type' => 'application/json'
     ]
 ]);
-echo $Response->body;
+echo '<pre>' . $Response->getBody() . '</pre>';
 
 // --------------------- ====== --------------------- //
 
@@ -27,7 +27,7 @@ $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
         'User-Agent' => 'EasyHttp/1.0.0'
     ]
 ]);
-echo $Response->body;
+echo '<pre>' . $Response->getBody() . '</pre>';
 
 // --------------------- ====== --------------------- //
 
@@ -37,4 +37,4 @@ $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
         'age' => '25'
     ]
 ]);
-echo $Response->body;
+echo '<pre>' . $Response->getBody() . '</pre>';

@@ -50,12 +50,12 @@ class ProxyServer
     /**
      * Setup Proxy Server
      *
-     * @param array $proxy ["host", "port", "user", "pass"]
+     * @param array $proxy ["ip", "port", "user", "pass"]
      * @return ProxyServer
      */
     public function setProxy(array $proxy): self
     {
-        $this->ip = $proxy['host'];
+        $this->ip = $proxy['ip'];
         $this->port = $proxy['port'];
         $this->username = $proxy['user'];
         $this->password = $proxy['pass'];
@@ -86,7 +86,7 @@ class ProxyServer
      */
     public function getProxy(): ?string
     {
-        return !empty($this->host) && !empty($this->port) ? "$this->host:$this->port" : null;
+        return !empty($this->ip) && !empty($this->port) ? "$this->ip:$this->port" : null;
     }
 
     /**

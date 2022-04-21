@@ -2,73 +2,116 @@
 
 namespace EasyHttp\Model;
 
+use EasyHttp\Enums\CurlInfo;
+
 /**
- * Http Response
+ * Class HttpResponse
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
+ *
+ *
+ * @method getBody()                                    This method returns the body of the response.
+ * @method setBody($body)                               This method sets the body of the response.
+ * @method setHeaderSize($size)                         This method sets the header size of the response.
+ * @method getHeaderSize()                              This method returns the header size of the response.
+ * @method getHeaders()                                 This method returns the headers of the response.
+ * @method getStatusCode()                              This method returns the status code of the response.
+ * @method setStatusCode($code)                         This method sets the status code of the response.
+ * @method getError()                                   This method returns the error of the response.
+ * @method setError($error)                             This method sets the error of the response.
+ * @method getErrorCode()                               This method returns the error code of the response.
+ * @method setErrorCode($code)                          This method sets the error code of the response.
  */
 class HttpResponse
 {
 
     /**
-     * Set response
+     * The Handler
      *
-     * @param array $input ["status", "headers", "body", "info", "error"]
-     * @return HttpResponse
+     * @var \CurlHandle
      */
-    public function setResponse(array $input): self
-    {
-        foreach ($input as $key => $value) {
-            $this->{$key} = $value;
-        }
-        return $this;
-    }
+    private \CurlHandle $curlHandle;
 
     /**
      * @var int
      */
-    public int $status;
+    private int $status;
+
+    /**
+     * @var int
+     */
+    private int $headerSize;
 
     /**
      * @var array
      */
-    public array $headers;
+    private array $headers;
 
     /**
-     * @var bool|string
+     * @var ?string
      */
-    public bool|string $body;
+    private ?string $body;
 
     /**
      * @var mixed
      */
-    public mixed $info;
+    private mixed $info;
 
     /**
      * @var string
      */
-    public string $error;
+    private string $error;
 
     /**
-     * Get status code
+     * The Error Code
      *
-     * @return int
+     * @var int
      */
-    public function getStatusCode(): int
+    private int $errorCode;
+
+    /**
+     * Set the curl handle
+     *
+     * @param \CurlHandle $curlHandle
+     * @return HttpResponse
+     */
+    public function setCurlHandle(\CurlHandle $curlHandle): HttpResponse
     {
-        return $this->status;
+        $this->curlHandle = $curlHandle;
+        return $this;
     }
 
     /**
-     * Get body
+     * Get info from the curl handle
      *
-     * @return ?string
+     * @return mixed
      */
-    public function getBody(): ?string
+    public function getCurlInfo(): CurlInfo
     {
-        return $this->body;
+        if (empty($this->curlHandle)) return false;
+        return new CurlInfo(curl_getinfo($this->curlHandle));
+    }
+
+    /**
+     * Set the headers of the response
+     *
+     * @param string $headers
+     * @return HttpResponse
+     */
+    public function setHeaders(string $headers): HttpResponse
+    {
+        $result = [];
+        $lines = explode("\r\n", $headers);
+        foreach ($lines as $line) {
+            if (str_contains($line, ':')) {
+                $parts = explode(':', $line);
+                $result[trim($parts[0])] = trim($parts[1]);
+            }
+        }
+        $this->headers = $result;
+        return $this;
     }
 
     /**
@@ -79,7 +122,32 @@ class HttpResponse
      */
     public function getHeaderLine(string $key): mixed
     {
-        return $this->headers[$key] ?? null;
+        return array_change_key_case($this->headers, CASE_LOWER)[strtolower($key)] ?? null;
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        if (method_exists($this, $name)) {
+            return $this->{$name}();
+        }
+
+        if (str_starts_with($name, 'get')) {
+            $property = lcfirst(substr($name, 3));
+            return $this->{$property} ?? null;
+        }
+
+        if (str_starts_with($name, 'set')) {
+            $property = lcfirst(substr($name, 3));
+            $this->{$property} = $arguments[0] ?? null;
+            return $this;
+        }
+
+        throw new \BadMethodCallException("Method $name does not exist");
     }
 
 }
