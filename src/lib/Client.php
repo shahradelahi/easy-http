@@ -25,13 +25,6 @@ class Client
     use ClientTrait;
 
     /**
-     * This variable is used to defied is certificate self-signed or not
-     *
-     * @var bool
-     */
-    private bool $isSelfSigned = true;
-
-    /**
      * The temp directory to download files - default is $_SERVER['TEMP']
      *
      * @var ?string
@@ -67,7 +60,7 @@ class Client
      */
     public function setHasSelfSignedCertificate(bool $has): void
     {
-        $this->isSelfSigned = $has;
+        putenv('HAS_SELF_SIGNED_CERT='.($has ? 'true' : 'false'));
     }
 
     /**
@@ -98,10 +91,12 @@ class Client
      */
     public function request(string $method, string $uri, array|HttpOptions $options = []): HttpResponse
     {
-        $CurlHandle = $this->create_curl_handler($method, $uri, $options);
-        if (!$CurlHandle) throw new RuntimeException(
-            'An error occurred while creating the curl handler'
-        );
+        $CurlHandle = Middleware::create_curl_handler($method, $uri, $options);
+        if (!$CurlHandle) {
+            throw new RuntimeException(
+                'An error occurred while creating the curl handler'
+            );
+        }
 
         $result = new HttpResponse();
         $result->setCurlHandle($CurlHandle);
@@ -118,8 +113,8 @@ class Client
 
         $result->setStatusCode(curl_getinfo($CurlHandle, CURLINFO_HTTP_CODE));
         $result->setHeaderSize(curl_getinfo($CurlHandle, CURLINFO_HEADER_SIZE));
-        $result->setHeaders(substr((string)$response, 0, $result->getHeaderSize()));
-        $result->setBody(substr((string)$response, $result->getHeaderSize()));
+        $result->setHeaders(substr((string) $response, 0, $result->getHeaderSize()));
+        $result->setBody(substr((string) $response, $result->getHeaderSize()));
 
         curl_close($CurlHandle);
 
@@ -140,14 +135,16 @@ class Client
         $multi_handler = curl_multi_init();
         foreach ($requests as $request) {
 
-            $CurlHandle = $this->create_curl_handler(
+            $CurlHandle = Middleware::create_curl_handler(
                 $request['method'] ?? null,
                 $request['uri'],
                 $request['options'] ?? []
             );
-            if (!$CurlHandle) throw new RuntimeException(
-                'An error occurred while creating the curl handler'
-            );
+            if (!$CurlHandle) {
+                throw new RuntimeException(
+                    'An error occurred while creating the curl handler'
+                );
+            }
             $handlers[] = $CurlHandle;
             curl_multi_add_handle($multi_handler, $CurlHandle);
 
@@ -193,36 +190,6 @@ class Client
         }
 
         return $result;
-    }
-
-    /**
-     * Create curl handler.
-     *
-     * @param ?string $method
-     * @param string $uri
-     * @param array|HttpOptions $options
-     *
-     * @return false|CurlHandle
-     */
-    private function create_curl_handler(?string $method, string $uri, array|HttpOptions $options = []): false|CurlHandle
-    {
-        $handler = curl_init();
-        if (is_resource($handler) || !$handler) return false;
-
-        if (gettype($options) === 'array') {
-            $options = new HttpOptions($options);
-        }
-
-        if (count($options->getQuery()) > 0) {
-            if (!str_contains($uri, '?')) $uri .= '?';
-            $uri .= $options->getQueryString();
-        }
-
-        curl_setopt($handler, CURLOPT_URL, $uri);
-
-        $this->set_curl_options($handler, $method, $options);
-
-        return $handler;
     }
 
     /**
@@ -334,96 +301,6 @@ class Client
     }
 
     /**
-     * Setup curl options based on the given method and our options.
-     *
-     * @param CurlHandle $cHandler
-     * @param ?string $method
-     * @param HttpOptions $options
-     *
-     * @return void
-     */
-    private function set_curl_options(CurlHandle $cHandler, ?string $method, HttpOptions $options): void
-    {
-        curl_setopt($cHandler, CURLOPT_HEADER, true);
-        curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'GET');
-
-        # Fetch the header
-        $fetchedHeaders = [];
-        foreach ($options->getHeader() as $header => $value) {
-            $fetchedHeaders[] = $header . ': ' . $value;
-        }
-
-        # Set headers
-        curl_setopt($cHandler, CURLOPT_HTTPHEADER, $fetchedHeaders ?? []);
-
-
-        # Add body if we have one.
-        if ($options->getBody()) {
-            curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'POST');
-            curl_setopt($cHandler, CURLOPT_POSTFIELDS, $options->getBody());
-            curl_setopt($cHandler, CURLOPT_POST, true);
-        }
-
-        # Check for a proxy
-        if ($options->getProxy() != null) {
-            curl_setopt($cHandler, CURLOPT_PROXY, $options->getProxy()->getHost());
-            curl_setopt($cHandler, CURLOPT_PROXYUSERPWD, $options->getProxy()->getAuth());
-            if ($options->getProxy()->type !== null) {
-                curl_setopt($cHandler, CURLOPT_PROXYTYPE, $options->getProxy()->type);
-            }
-        }
-
-        curl_setopt($cHandler, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($cHandler, CURLOPT_FOLLOWLOCATION, true);
-
-        # Add and override the custom curl options.
-        foreach ($options->getCurlOptions() as $option => $value) {
-            curl_setopt($cHandler, $option, $value);
-        }
-
-        # if we have a timeout, set it.
-        curl_setopt($cHandler, CURLOPT_TIMEOUT, $options->getTimeout());
-
-        # If self-signed certs are allowed, set it.
-        if ($this->isSelfSigned === true) {
-            curl_setopt($cHandler, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($cHandler, CURLOPT_SSL_VERIFYHOST, false);
-        }
-
-        $this->handle_media($cHandler, $options);
-    }
-
-    /**
-     * Handle the media
-     *
-     * @param CurlHandle $handler
-     * @param HttpOptions $options
-     * @return void
-     */
-    private function handle_media(CurlHandle $handler, HttpOptions $options): void
-    {
-        if (count($options->getMultipart()) > 0) {
-            curl_setopt($handler, CURLOPT_POST, true);
-            curl_setopt($handler, CURLOPT_CUSTOMREQUEST, 'POST');
-
-            $form_data = new FormData();
-            foreach ($options->getMultipart() as $key => $value) {
-                $form_data->addFile($key, $value);
-            }
-
-            $headers = [];
-            foreach ($options->getHeader() as $header => $value) {
-                if (Utils::insensitiveString($header, 'content-type')) continue;
-                $headers[] = $header . ': ' . $value;
-            }
-            $headers[] = 'Content-Type: multipart/form-data';
-
-            curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($handler, CURLOPT_POSTFIELDS, $form_data->getFiles());
-        }
-    }
-
-    /**
      * Get filetype with the extension.
      *
      * @param string $filename The absolute path to the file.
@@ -455,7 +332,7 @@ class Client
             ]
         ]);
 
-        return (int)$response->getHeaderLine('Content-Length') ?? 0;
+        return (int) $response->getHeaderLine('Content-Length') ?? 0;
     }
 
     /**

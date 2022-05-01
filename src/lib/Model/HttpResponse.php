@@ -54,7 +54,10 @@ class HttpResponse
      */
     public function getInfoFromCurl(): CurlInfo|false
     {
-        if (empty($this->getCurlHandle())) return false;
+        if (empty($this->getCurlHandle())) {
+            return false;
+        }
+
         return new CurlInfo(curl_getinfo($this->curlHandle));
     }
 
