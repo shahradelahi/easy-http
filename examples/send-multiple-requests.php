@@ -11,7 +11,7 @@ $requests = [
         'method' => 'GET',
         'uri' => 'https://httpbin.org/get',
         'options' => [
-            'queries' => [
+            'query' => [
                 'foo' => 'bar',
             ],
         ],
@@ -20,7 +20,7 @@ $requests = [
         'method' => 'POST',
         'uri' => 'https://httpbin.org/post',
         'options' => [
-            'headers' => [
+            'header' => [
                 'User-Agent' => 'EasyHttp/1.0.0',
             ],
             'body' => [

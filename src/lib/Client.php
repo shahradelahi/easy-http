@@ -3,12 +3,14 @@
 namespace EasyHttp;
 
 use CurlHandle;
+use EasyHttp\Enums\ErrorCode;
 use EasyHttp\Model\DownloadResult;
 use EasyHttp\Model\HttpOptions;
 use EasyHttp\Model\HttpResponse;
-use EasyHttp\Model\UploadResult;
 use EasyHttp\Traits\ClientTrait;
 use EasyHttp\Util\Utils;
+use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Client
@@ -49,6 +51,7 @@ class Client
     public function __construct()
     {
         $this->tempDir = $_SERVER['TEMP'] ?? null;
+        $this->setHasSelfSignedCertificate(true);
     }
 
     /**
@@ -77,7 +80,9 @@ class Client
     public function setTempPath(string $path): void
     {
         if (!file_exists($path)) {
-            throw new \InvalidArgumentException('The directory path is not exists');
+            throw new InvalidArgumentException(
+                sprintf('The path "%s" does not exist', $path)
+            );
         }
         $this->tempDir = $path;
     }
@@ -93,16 +98,21 @@ class Client
      */
     public function request(string $method, string $uri, array|HttpOptions $options = []): HttpResponse
     {
-        $CurlHandle = $this->createCurlHandler($method, $uri, $options);
-        if (!$CurlHandle) throw new \RuntimeException('Curl handle has not been created');
+        $CurlHandle = $this->create_curl_handler($method, $uri, $options);
+        if (!$CurlHandle) throw new RuntimeException(
+            'An error occurred while creating the curl handler'
+        );
 
         $result = new HttpResponse();
         $result->setCurlHandle($CurlHandle);
 
         $response = curl_exec($CurlHandle);
         if (curl_errno($CurlHandle) || !$response) {
-            $result->setError(curl_error($CurlHandle));
             $result->setErrorCode(curl_errno($CurlHandle));
+            $result->setErrorMessage(
+                curl_error($CurlHandle) ??
+                ErrorCode::getMessage(curl_errno($CurlHandle))
+            );
             return $result;
         }
 
@@ -130,12 +140,14 @@ class Client
         $multi_handler = curl_multi_init();
         foreach ($requests as $request) {
 
-            $CurlHandle = $this->createCurlHandler(
+            $CurlHandle = $this->create_curl_handler(
                 $request['method'] ?? null,
                 $request['uri'],
                 $request['options'] ?? []
             );
-            if (!$CurlHandle) throw new \RuntimeException('Curl handle has not been created');
+            if (!$CurlHandle) throw new RuntimeException(
+                'An error occurred while creating the curl handler'
+            );
             $handlers[] = $CurlHandle;
             curl_multi_add_handle($multi_handler, $CurlHandle);
 
@@ -164,8 +176,11 @@ class Client
             $response = new HttpResponse();
 
             if (curl_errno($handler)) {
-                $response->setError(curl_error($handler));
                 $response->setErrorCode(curl_errno($handler));
+                $response->setErrorMessage(
+                    curl_error($handler) ??
+                    ErrorCode::getMessage(curl_errno($handler))
+                );
             }
 
             $response->setCurlHandle($handler);
@@ -189,7 +204,7 @@ class Client
      *
      * @return false|CurlHandle
      */
-    private function createCurlHandler(?string $method, string $uri, array|HttpOptions $options = []): false|CurlHandle
+    private function create_curl_handler(?string $method, string $uri, array|HttpOptions $options = []): false|CurlHandle
     {
         $handler = curl_init();
         if (is_resource($handler) || !$handler) return false;
@@ -198,75 +213,16 @@ class Client
             $options = new HttpOptions($options);
         }
 
-        if (count($options->queries) > 0) {
+        if (count($options->getQuery()) > 0) {
             if (!str_contains($uri, '?')) $uri .= '?';
             $uri .= $options->getQueryString();
         }
 
         curl_setopt($handler, CURLOPT_URL, $uri);
 
-        $this->setCurlOpts($handler, $method, $options);
+        $this->set_curl_options($handler, $method, $options);
 
         return $handler;
-    }
-
-    /**
-     * Setup curl options based on the given method and our options.
-     *
-     * @param CurlHandle $cHandler
-     * @param ?string $method
-     * @param HttpOptions $options
-     *
-     * @return void
-     */
-    private function setCurlOpts(CurlHandle $cHandler, ?string $method, HttpOptions $options): void
-    {
-        curl_setopt($cHandler, CURLOPT_HEADER, true);
-        curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'GET');
-
-        # Fetch the header
-        $fetchedHeaders = [];
-        foreach ($options->headers as $header => $value) {
-            $fetchedHeaders[] = $header . ': ' . $value;
-        }
-
-        # Set headers
-        curl_setopt($cHandler, CURLOPT_HTTPHEADER, $fetchedHeaders ?? []);
-
-
-        # Add body if we have one.
-        if ($options->body) {
-            curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'POST');
-            curl_setopt($cHandler, CURLOPT_POSTFIELDS, $options->body);
-            curl_setopt($cHandler, CURLOPT_POST, true);
-        }
-
-        # Check for a proxy
-        if ($options->proxy != null) {
-            curl_setopt($cHandler, CURLOPT_PROXY, $options->proxy->getProxy());
-            curl_setopt($cHandler, CURLOPT_PROXYUSERPWD, $options->proxy->getAuth());
-            if ($options->proxy->type !== null) {
-                curl_setopt($cHandler, CURLOPT_PROXYTYPE, $options->proxy->type);
-                curl_setopt($cHandler, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
-            }
-        }
-
-        curl_setopt($cHandler, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($cHandler, CURLOPT_FOLLOWLOCATION, true);
-
-        # Add and override the custom curl options.
-        foreach ($options->curlOptions as $option => $value) {
-            curl_setopt($cHandler, $option, $value);
-        }
-
-        # if we have a timeout, set it.
-        curl_setopt($cHandler, CURLOPT_TIMEOUT, $options->timeout ?? 10);
-
-        # If self-signed certs are allowed, set it.
-        if ($this->isSelfSigned === true) {
-            curl_setopt($cHandler, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($cHandler, CURLOPT_SSL_VERIFYHOST, false);
-        }
     }
 
     /**
@@ -284,12 +240,16 @@ class Client
     public function download(string $url, array|HttpOptions $options = []): DownloadResult
     {
         if (empty($this->tempDir)) {
-            throw new \RuntimeException('No temp directory set.');
+            throw new RuntimeException(
+                'The temp directory is not set. Please set the temp directory using the `setTempDir` method.'
+            );
         }
 
         if (!file_exists($this->tempDir)) {
             if (mkdir($this->tempDir, 0777, true) === false) {
-                throw new \RuntimeException('Could not create temp directory.');
+                throw new RuntimeException(
+                    'The temp directory is not writable. Please set the temp directory using the `setTempDir` method.'
+                );
             }
         }
 
@@ -297,8 +257,8 @@ class Client
             $options = new HttpOptions($options);
         }
 
-        $fileSize = $this->getFileSize($url);
-        $chunkSize = $this->getChunkSize($fileSize);
+        $fileSize = $this->get_file_size($url);
+        $chunkSize = $this->get_chunk_size($fileSize);
 
         $result = new DownloadResult();
 
@@ -333,7 +293,7 @@ class Client
             $result->addChunk(
                 Utils::randomString(16),
                 $response->getBody(),
-                $response->getCurlInfo()->TOTAL_TIME
+                $response->getInfoFromCurl()->TOTAL_TIME
             );
         }
 
@@ -343,47 +303,135 @@ class Client
     }
 
     /**
-     * Upload single or multiple files with request method of POST.
+     * Upload single or multiple files
+     *
+     * This method is sending file with request method of POST and
+     * Content-Type of multipart/form-data.
      *
      * @param string $url The direct url to the file.
-     * @param string|array $filePath The path to the file.
+     * @param array $filePath The path to the file.
      * @param array|HttpOptions $options The options to use.
      *
-     * @return UploadResult
+     * @return HttpResponse
      */
-    public function upload(string $url, string|array $filePath, array|HttpOptions $options = []): UploadResult
+    public function upload(string $url, array $filePath, array|HttpOptions $options = []): HttpResponse
     {
         if (gettype($options) === 'array') {
             $options = new HttpOptions($options);
         }
 
-        if (gettype($filePath) === 'string') {
-            $filePath = [$filePath];
+        $multipart = [];
+
+        foreach ($filePath as $key => $file) {
+            $multipart[$key] = new \CURLFile(
+                realpath($file),
+                $this->get_file_type($file)
+            );
         }
 
-        $result = new UploadResult();
-        $result->startTime = time();
+        $options->setMultipart($multipart);
+        return $this->post($url, $options);
+    }
 
-        foreach ($filePath as $file) {
-            $options->addMultiPart('file', [
-                'name' => basename($file),
-                'contents' => fopen($file, 'r')
-            ]);
+    /**
+     * Setup curl options based on the given method and our options.
+     *
+     * @param CurlHandle $cHandler
+     * @param ?string $method
+     * @param HttpOptions $options
+     *
+     * @return void
+     */
+    private function set_curl_options(CurlHandle $cHandler, ?string $method, HttpOptions $options): void
+    {
+        curl_setopt($cHandler, CURLOPT_HEADER, true);
+        curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'GET');
+
+        # Fetch the header
+        $fetchedHeaders = [];
+        foreach ($options->getHeader() as $header => $value) {
+            $fetchedHeaders[] = $header . ': ' . $value;
         }
 
-        $response = $this->request('POST', $url, array_merge($options->toArray(), [
-            'header' => [
-                'Content-Type' => 'multipart/form-data'
-            ]
-        ]));
+        # Set headers
+        curl_setopt($cHandler, CURLOPT_HTTPHEADER, $fetchedHeaders ?? []);
 
-        $result->endTime = time();
-        $result->response = $response;
-        if ($response->getStatusCode() === 200) {
-            $result->success = true;
+
+        # Add body if we have one.
+        if ($options->getBody()) {
+            curl_setopt($cHandler, CURLOPT_CUSTOMREQUEST, $method ?? 'POST');
+            curl_setopt($cHandler, CURLOPT_POSTFIELDS, $options->getBody());
+            curl_setopt($cHandler, CURLOPT_POST, true);
         }
 
-        return $result;
+        # Check for a proxy
+        if ($options->getProxy() != null) {
+            curl_setopt($cHandler, CURLOPT_PROXY, $options->getProxy()->getHost());
+            curl_setopt($cHandler, CURLOPT_PROXYUSERPWD, $options->getProxy()->getAuth());
+            if ($options->getProxy()->type !== null) {
+                curl_setopt($cHandler, CURLOPT_PROXYTYPE, $options->getProxy()->type);
+            }
+        }
+
+        curl_setopt($cHandler, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($cHandler, CURLOPT_FOLLOWLOCATION, true);
+
+        # Add and override the custom curl options.
+        foreach ($options->getCurlOptions() as $option => $value) {
+            curl_setopt($cHandler, $option, $value);
+        }
+
+        # if we have a timeout, set it.
+        curl_setopt($cHandler, CURLOPT_TIMEOUT, $options->getTimeout());
+
+        # If self-signed certs are allowed, set it.
+        if ($this->isSelfSigned === true) {
+            curl_setopt($cHandler, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($cHandler, CURLOPT_SSL_VERIFYHOST, false);
+        }
+
+        $this->handle_media($cHandler, $options);
+    }
+
+    /**
+     * Handle the media
+     *
+     * @param CurlHandle $handler
+     * @param HttpOptions $options
+     * @return void
+     */
+    private function handle_media(CurlHandle $handler, HttpOptions $options): void
+    {
+        if (count($options->getMultipart()) > 0) {
+            curl_setopt($handler, CURLOPT_POST, true);
+            curl_setopt($handler, CURLOPT_CUSTOMREQUEST, 'POST');
+
+            $form_data = new FormData();
+            foreach ($options->getMultipart() as $key => $value) {
+                $form_data->addFile($key, $value);
+            }
+
+            $headers = [];
+            foreach ($options->getHeader() as $header => $value) {
+                if (Utils::insensitiveString($header, 'content-type')) continue;
+                $headers[] = $header . ': ' . $value;
+            }
+            $headers[] = 'Content-Type: multipart/form-data';
+
+            curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($handler, CURLOPT_POSTFIELDS, $form_data->getFiles());
+        }
+    }
+
+    /**
+     * Get filetype with the extension.
+     *
+     * @param string $filename The absolute path to the file.
+     * @return string eg. image/jpeg
+     */
+    public static function get_file_type(string $filename): string
+    {
+        return MimeType::$TYPES[pathinfo($filename, PATHINFO_EXTENSION)] ?? 'application/octet-stream';
     }
 
     /**
@@ -392,8 +440,12 @@ class Client
      * @param string $url The direct url to the file.
      * @return int
      */
-    private function getFileSize(string $url): int
+    public function get_file_size(string $url): int
     {
+        if (file_exists($url)) {
+            return filesize($url);
+        }
+
         $response = $this->get($url, [
             'headers' => [
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36',
@@ -415,7 +467,7 @@ class Client
      * @param int $fileSize The file size.
      * @return int
      */
-    private function getChunkSize(int $fileSize): int
+    private function get_chunk_size(int $fileSize): int
     {
         $maxChunkSize = $fileSize / $this->maxChunkCount;
 
@@ -427,9 +479,3 @@ class Client
     }
 
 }
-
-// Command to merge last 3 commit on GitHub:
-// git merge -s ours HEAD~3
-// git push origin master
-// git push origin HEAD:master
-// git push origin HEAD~3:master

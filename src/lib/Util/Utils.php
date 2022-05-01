@@ -78,4 +78,16 @@ class Utils
         }
     }
 
+    /**
+     * Validate insensitive case string
+     *
+     * @param string $string The string
+     * @param string $value The second value to compare with
+     * @return bool
+     */
+    public static function insensitiveString(string $string, string $value): bool
+    {
+        return (bool)preg_match_all('/' . $value . '/i', $string);
+    }
+
 }

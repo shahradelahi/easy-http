@@ -76,7 +76,7 @@ On this part we will show you how to send the request using the normal CURL.
 ```php
 $startTime = microtime(true);
 $response = $client->post($endPoint, [
-    'headers' => [
+    'header' => [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
     ],
@@ -102,7 +102,7 @@ for ($i = 0; $i < 2000; $i += 500) {
     $requests[] = [
         'uri' => $endPoint,
         'options' => [
-            'headers' => [
+            'header' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
@@ -137,5 +137,3 @@ The result of this example is showing us that the bulk request is much faster th
 Normal CURL - Total time: 6.0051791667938 - Memory: 10.21 MiB
 Bulk Request - Total time: 2.0174889564514 - Memory: 7.91 MiB
 ```
-
-[< Back](../README.md#documentation) | [Go to top](#breakdown-of-large-request)

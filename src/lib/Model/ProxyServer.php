@@ -80,11 +80,11 @@ class ProxyServer
     }
 
     /**
-     * Get Proxy Server
+     * Get the IP:Port string
      *
      * @return ?string
      */
-    public function getProxy(): ?string
+    public function getHost(): ?string
     {
         return !empty($this->ip) && !empty($this->port) ? "$this->ip:$this->port" : null;
     }

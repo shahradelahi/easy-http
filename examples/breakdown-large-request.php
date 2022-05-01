@@ -118,7 +118,7 @@ $post = [
 
 $start = microtime(true);
 $Response = $client->post($endpoint, [
-    'headers' => [
+    'header' => [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
     ],
@@ -143,7 +143,7 @@ for ($i = 0; $i < 2000; $i += 500) {
         'method' => 'POST',
         'uri' => $endpoint,
         'options' => [
-            'headers' => [
+            'header' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],

@@ -1,0 +1,28 @@
+<html lang="en-US">
+<head>
+	<title>Axios | Upload file</title>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<form id="uploadForm" method="post" enctype="multipart/form-data">
+	<label>Upload Image File:</label><br/>
+	<input name="userImage" type="file"/>
+	<input type="submit" value="Submit"/>
+</form>
+</body>
+<script>
+    var path = 'https://httpbin.org/post';
+    var form = document.getElementById('uploadForm');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var formData = new FormData(form);
+        axios.post(path, formData).then(function (response) {
+            console.log(response);
+        }).catch(function (error) {
+            console.log(error);
+        });
+    });
+
+</script>
+</html>

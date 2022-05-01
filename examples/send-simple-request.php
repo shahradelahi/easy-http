@@ -13,7 +13,7 @@ $Response = (new \EasyHttp\Client())->post('https://httpbin.org/post', [
         'name' => 'John Doe',
         'age' => '25'
     ],
-    'headers' => [
+    'header' => [
         'Content-Type' => 'application/json'
     ]
 ]);
@@ -22,7 +22,7 @@ echo '<pre>' . $Response->getBody() . '</pre>';
 // --------------------- ====== --------------------- //
 
 $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
-    'headers' => [
+    'header' => [
         'Accept' => 'application/json',
         'User-Agent' => 'EasyHttp/1.0.0'
     ]
@@ -32,7 +32,7 @@ echo '<pre>' . $Response->getBody() . '</pre>';
 // --------------------- ====== --------------------- //
 
 $Response = (new \EasyHttp\Client())->get('https://httpbin.org/get', [
-    'queries' => [
+    'query' => [
         'name' => 'John Doe',
         'age' => '25'
     ]

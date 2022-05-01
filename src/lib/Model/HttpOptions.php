@@ -8,52 +8,80 @@ namespace EasyHttp\Model;
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
+ *
+ * @method array       getHeader()          Get the header
+ * @method array       getCookie()          Get the cookie
+ * @method string|null getBody()            Get the body
+ * @method int         getTimeout()         Get the timeout
+ * @method array       getMultipart()       Get the multipart
+ * @method ProxyServer getProxy()           Get the proxy
+ * @method array       getQuery()           Get the query
+ * @method array       getCurlOptions()     Get the curl options
+ *
+ * @method $this setHeader(array $header)           Set the header
+ * @method $this setCookie(array $cookie)           Set the cookie
+ * @method $this setQuery(array $query)             Set the query
+ * @method $this setTimeout(int $timeout)           Set the timeout
+ * @method $this setMultipart(array $multipart)     Set the multipart
  */
 class HttpOptions
 {
 
     /**
-     * @var ?array
+     * An array of HTTP header fields to set, in the format array('<em>Content-type: text/plain</em>', '<em>Content-length: 100</em>')
+     *
+     * @var array
      */
-    public ?array $headers = [];
+    private array $header = [];
 
     /**
-     * @var ?array
+     * An array of cookies to set, in the format array('name' => 'value', 'name2' => 'value2')
+     *
+     * @var array
      */
-    public ?array $queries = [];
+    private array $cookie = [];
 
     /**
+     * An array of query data (e.g., array('id' => '123', 'name' => 'John')) for use in the query string part of the URI (e.g., http://example.com/index.php?id=123&name=John)
+     *
+     * @var array
+     */
+    private array $query = [];
+
+    /**
+     * The body of the HTTP request
+     *
      * @var ?string
      */
-    public ?string $body = null;
+    private ?string $body = null;
+
+    /**
+     * The maximum number of seconds to allow cURL functions to execute
+     *
+     * @var int
+     */
+    private int $timeout = 30;
+
+    /**
+     * An array of multipart data (e.g., array('name', 'contents', 'size')), for use in the multipart/form-data part of the request body
+     *
+     * @var array
+     */
+    private array $multipart = [];
+
+    /**
+     * An array of cURL options
+     *
+     * @var array
+     */
+    private array $curlOptions = [];
 
     /**
      * The proxy server to use
      *
      * @var ?ProxyServer
      */
-    public ?ProxyServer $proxy = null;
-
-    /**
-     * Add specific opt to curl
-     *
-     * @var ?array
-     */
-    public ?array $curlOptions = [];
-
-    /**
-     * The timeout of the request
-     *
-     * @var ?int
-     */
-    public ?int $timeout = null;
-
-    /**
-     * The multipart data
-     *
-     * @var ?array
-     */
-    public ?array $multipart = null;
+    private ?ProxyServer $proxy = null;
 
     /**
      * Http Options constructor.
@@ -130,13 +158,13 @@ class HttpOptions
     }
 
     /**
-     * Get Query String
+     * Generate URL-encoded query string.
      *
      * @return string
      */
     public function getQueryString(): string
     {
-        return http_build_query($this->queries);
+        return http_build_query($this->query);
     }
 
     /**
@@ -155,16 +183,47 @@ class HttpOptions
     }
 
     /**
-     * @param string $string
-     * @param array $array
+     * Add Multipart Data
+     *
+     * @param array $multipart [{"name", "path"}, ...]
      * @return void
      */
-    public function addMultiPart(string $string, array $array): void
+    public function addMultiPart(array $multipart): void
     {
-        $this->multipart[] = [
-            'name' => $string,
-            'contents' => $array
-        ];
+        $this->multipart[] = $multipart;
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        if (method_exists($this, $name)) {
+            return $this->{$name}(...$arguments);
+        }
+
+        if (property_exists($this, $name)) {
+            return $this->{$name};
+        }
+
+        if (str_starts_with($name, 'set')) {
+            $property = lcfirst(substr($name, 3));
+            if (property_exists($this, $property)) {
+                $this->{$property} = $arguments[0];
+                return $this;
+            }
+        }
+
+        if (str_starts_with($name, 'get')) {
+            $property = lcfirst(substr($name, 3));
+            if (property_exists($this, $property)) {
+                return $this->{$property};
+            }
+        }
+
+        throw new \BadMethodCallException("Method $name does not exist");
     }
 
 }
