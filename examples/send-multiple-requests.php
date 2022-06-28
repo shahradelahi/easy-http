@@ -20,7 +20,7 @@ $requests = [
         'method' => 'POST',
         'uri' => 'https://httpbin.org/post',
         'options' => [
-            'header' => [
+            'headers' => [
                 'User-Agent' => 'EasyHttp/1.0.0',
             ],
             'body' => [

@@ -3,7 +3,7 @@
 namespace EasyHttp\Exception;
 
 /**
- * Invalid Argument Exception
+ * Invalid Argument exception
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
@@ -11,5 +11,7 @@ namespace EasyHttp\Exception;
  */
 class InvalidArgumentException extends \Exception
 {
-    protected $message = 'Invalid argument';
+
+	protected $message = 'Invalid argument';
+
 }

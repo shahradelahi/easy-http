@@ -6,7 +6,7 @@ use CurlHandle;
 use EasyHttp\Enums\CurlInfo;
 
 /**
- * Class HttpResponse
+ * HttpResponse class
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
@@ -35,90 +35,90 @@ use EasyHttp\Enums\CurlInfo;
 class HttpResponse
 {
 
-    /**
-     * Set the curl handle
-     *
-     * @param \CurlHandle $curlHandle
-     * @return HttpResponse
-     */
-    public function setCurlHandle(\CurlHandle $curlHandle): HttpResponse
-    {
-        $this->curlHandle = $curlHandle;
-        return $this;
-    }
+	/**
+	 * Set the curl handle
+	 *
+	 * @param \CurlHandle $curlHandle
+	 * @return HttpResponse
+	 */
+	public function setCurlHandle(\CurlHandle $curlHandle): HttpResponse
+	{
+		$this->curlHandle = $curlHandle;
+		return $this;
+	}
 
-    /**
-     * Get info from the curl handle
-     *
-     * @return CurlInfo|false
-     */
-    public function getInfoFromCurl(): CurlInfo|false
-    {
-        if (empty($this->getCurlHandle())) {
-            return false;
-        }
+	/**
+	 * Get info from the curl handle
+	 *
+	 * @return CurlInfo|false
+	 */
+	public function getInfoFromCurl(): CurlInfo|false
+	{
+		if (empty($this->getCurlHandle())) {
+			return false;
+		}
 
-        return new CurlInfo(curl_getinfo($this->curlHandle));
-    }
+		return new CurlInfo(curl_getinfo($this->curlHandle));
+	}
 
-    /**
-     * Set the headers of the response
-     *
-     * @param string $headers
-     * @return HttpResponse
-     */
-    public function setHeaders(string $headers): HttpResponse
-    {
-        $result = [];
-        $lines = explode("\r\n", $headers);
-        foreach ($lines as $line) {
-            if (str_contains($line, ':')) {
-                $parts = explode(':', $line);
-                $result[trim($parts[0])] = trim($parts[1]);
-            }
-        }
-        $this->headers = $result;
-        return $this;
-    }
+	/**
+	 * Set the headers of the response
+	 *
+	 * @param string $headers
+	 * @return HttpResponse
+	 */
+	public function setHeaders(string $headers): HttpResponse
+	{
+		$result = [];
+		$lines = explode("\r\n", $headers);
+		foreach ($lines as $line) {
+			if (str_contains($line, ':')) {
+				$parts = explode(':', $line);
+				$result[trim($parts[0])] = trim($parts[1]);
+			}
+		}
+		$this->headers = $result;
+		return $this;
+	}
 
-    /**
-     * Get a key from the response headers
-     *
-     * @param string $key
-     * @return mixed
-     */
-    public function getHeaderLine(string $key): mixed
-    {
-        return array_change_key_case($this->headers, CASE_LOWER)[strtolower($key)] ?? null;
-    }
+	/**
+	 * Get a key from the response headers
+	 *
+	 * @param string $key
+	 * @return mixed
+	 */
+	public function getHeaderLine(string $key): mixed
+	{
+		return array_change_key_case($this->headers, CASE_LOWER)[strtolower($key)] ?? null;
+	}
 
-    /**
-     * @param string $name
-     * @param array $arguments
-     * @return mixed
-     */
-    public function __call(string $name, array $arguments): mixed
-    {
-        if (property_exists($this, $name)) {
-            return $this->{$name};
-        }
+	/**
+	 * @param string $name
+	 * @param array $arguments
+	 * @return mixed
+	 */
+	public function __call(string $name, array $arguments): mixed
+	{
+		if (property_exists($this, $name)) {
+			return $this->{$name};
+		}
 
-        if (method_exists($this, $name)) {
-            return $this->{$name}();
-        }
+		if (method_exists($this, $name)) {
+			return $this->{$name}();
+		}
 
-        if (str_starts_with($name, 'get')) {
-            $property = lcfirst(substr($name, 3));
-            return $this->{$property} ?? null;
-        }
+		if (str_starts_with($name, 'get')) {
+			$property = lcfirst(substr($name, 3));
+			return $this->{$property} ?? null;
+		}
 
-        if (str_starts_with($name, 'set')) {
-            $property = lcfirst(substr($name, 3));
-            $this->{$property} = $arguments[0] ?? null;
-            return $this;
-        }
+		if (str_starts_with($name, 'set')) {
+			$property = lcfirst(substr($name, 3));
+			$this->{$property} = $arguments[0] ?? null;
+			return $this;
+		}
 
-        throw new \BadMethodCallException("Method $name does not exist");
-    }
+		throw new \BadMethodCallException("Method $name does not exist");
+	}
 
 }

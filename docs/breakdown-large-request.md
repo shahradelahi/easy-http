@@ -76,7 +76,7 @@ On this part we will show you how to send the request using the normal CURL.
 ```php
 $startTime = microtime(true);
 $response = $client->post($endPoint, [
-    'header' => [
+    'headers' => [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
     ],
@@ -102,7 +102,7 @@ for ($i = 0; $i < 2000; $i += 500) {
     $requests[] = [
         'uri' => $endPoint,
         'options' => [
-            'header' => [
+            'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],

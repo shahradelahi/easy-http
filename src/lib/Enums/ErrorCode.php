@@ -3,7 +3,7 @@
 namespace EasyHttp\Enums;
 
 /**
- * Class ErrorCode
+ * ErrorCode class
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)

@@ -13,7 +13,7 @@ echo '<pre>' . json_encode($Result->downloads, JSON_PRETTY_PRINT) . '</pre>';
 
 
 if ($Result->save(__DIR__ . '/uploads/google.png')) {
-    echo 'File saved successfully';
+	echo 'File saved successfully';
 } else {
-    echo 'File not saved';
+	echo 'File not saved';
 }

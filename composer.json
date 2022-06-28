@@ -1,12 +1,7 @@
 {
    "name": "shahradelahi/easy-http",
    "description": "A Easy HTTP Client library for PHP",
-   "keywords": [
-	  "http",
-	  "client",
-	  "curl",
-	  "php"
-   ],
+   "keywords": ["http", "client", "curl", "php"],
    "minimum-stability": "stable",
    "license": "MIT",
    "authors": [

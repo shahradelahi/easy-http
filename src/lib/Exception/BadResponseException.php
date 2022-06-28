@@ -3,7 +3,7 @@
 namespace EasyHttp\Exception;
 
 /**
- * Bad Response Exception
+ * Bad Response exception
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
@@ -11,5 +11,7 @@ namespace EasyHttp\Exception;
  */
 class BadResponseException extends \Exception
 {
-    protected $message = 'Bad response from server';
+
+	protected $message = 'Bad response from server';
+
 }
