@@ -69,10 +69,10 @@ echo $response->getBody(); // {"args":{},"headers":{},"origin":"**", ...}
 We've created some sample of usage in below and if you have questions or want a new feature, please feel free to
 open [an issue](https://github.com/shahradelahi/easy-http/issues/new).
 
-* [Send simple request](/examples/send-simple-request.php)
+* [Send simple request](/docs/send-request.md)
 * [Breakdown of a large request into pieces](/docs/breakdown-large-request.md)
 * [Send multiple requests at once](/docs/send-multiple-requests.md)
-* [Download large files](/examples/download-large-file.php)
+* [Download large files](/examples/download/download-large-file.php)
 
 ### License
 

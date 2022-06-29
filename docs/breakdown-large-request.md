@@ -16,7 +16,7 @@ On this page, we will show you how to break down a large request into smaller re
 <br/>
 
 ### Getting Started
-The following is a breakdown of the request we will get data from `API` of `TradingView` and the source code of this example is available at [here](../examples/breakdown-large-request.php).
+The following is a breakdown of the request we will get data from `API` of `TradingView` and the source code of this example is available at [here](../examples/bulk-request/breakdown-large-request.php).
 
 <br/>
 
@@ -118,6 +118,7 @@ for ($i = 0; $i < 2000; $i += 500) {
 ```
 
 #### Bulk Request: Send Requests
+
 ```php
 
 $start = microtime(true);
@@ -125,7 +126,7 @@ $responses = $client->bulk($requests);
 foreach ($responses as $response) {
     $Data = json_decode($response->getBody(), true);
 }
-$Memory = \EasyHttp\Util\Utils::bytesToHuman(memory_get_usage());
+$Memory = \EasyHttp\Utils\Toolkit::bytesToHuman(memory_get_usage());
 echo '<pre>' . "Bulk Request - Total time: " . (microtime(true) - $start) . " - Memory: $Memory" . '</pre>';
 ```
 

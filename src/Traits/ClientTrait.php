@@ -6,7 +6,7 @@ use EasyHttp\Model\HttpOptions;
 use EasyHttp\Model\HttpResponse;
 
 /**
- * Client trait
+ * ClientTrait class
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)

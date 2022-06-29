@@ -1,17 +1,15 @@
 <?php
 
-namespace EasyHttp\Exception;
+namespace EasyHttp\Exceptions;
 
 /**
- * Invalid Argument exception
+ * BadUriException class
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
  */
-class InvalidArgumentException extends \Exception
+class BadUriException extends \Exception
 {
-
-	protected $message = 'Invalid argument';
 
 }

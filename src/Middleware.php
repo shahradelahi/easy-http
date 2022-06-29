@@ -3,7 +3,7 @@
 namespace EasyHttp;
 
 use EasyHttp\Model\HttpOptions;
-use EasyHttp\Util\Utils;
+use EasyHttp\Utils\Toolkit;
 
 /**
  * Middleware class
@@ -128,7 +128,7 @@ class Middleware
 
 			$headers = [];
 			foreach ($options->getHeaders() as $header => $value) {
-				if (Utils::insensitiveString($header, 'content-type')) continue;
+				if (Toolkit::insensitiveString($header, 'content-type')) continue;
 				$headers[] = $header . ': ' . $value;
 			}
 			$headers[] = 'Content-Type: multipart/form-data';

@@ -130,7 +130,7 @@ $Response = $client->post($endpoint, [
 	]),
 ]);
 $Data = json_decode($Response->getBody(), true);
-$Memory = \EasyHttp\Util\Utils::bytesToHuman(memory_get_usage());
+$Memory = \EasyHttp\Utils\Toolkit::bytesToHuman(memory_get_usage());
 echo '<pre>' . "Normal CURL - Total time: " . (microtime(true) - $start) . " - Memory: $Memory" . '</pre>';
 echo '<br/>';
 
@@ -164,5 +164,5 @@ $responses = $client->bulk($requests);
 foreach ($responses as $response) {
 	$Data = json_decode($response->getBody(), true);
 }
-$Memory = \EasyHttp\Util\Utils::bytesToHuman(memory_get_usage());
+$Memory = \EasyHttp\Utils\Toolkit::bytesToHuman(memory_get_usage());
 echo '<pre>' . "Bulk Request - Total time: " . (microtime(true) - $start) . " - Memory: $Memory" . '</pre>';

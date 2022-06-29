@@ -1,7 +1,7 @@
 # Send Multiple Requests at once
 
 The source code of this documentation is available
-at [`send-multiple-requests.php`](../examples/send-multiple-requests.php).
+at [`send-multiple-requests.php`](../examples/bulk-request/send-multiple-requests.php).
 
 ### Getting Started
 

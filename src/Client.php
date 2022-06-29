@@ -7,7 +7,7 @@ use EasyHttp\Model\DownloadResult;
 use EasyHttp\Model\HttpOptions;
 use EasyHttp\Model\HttpResponse;
 use EasyHttp\Traits\ClientTrait;
-use EasyHttp\Util\Utils;
+use EasyHttp\Utils\Toolkit;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -252,7 +252,7 @@ class Client
 
 		foreach ($this->bulk($requests) as $response) {
 			$result->addChunk(
-				Utils::randomString(16),
+				Toolkit::randomString(16),
 				$response->getBody(),
 				$response->getInfoFromCurl()->TOTAL_TIME
 			);
@@ -302,7 +302,7 @@ class Client
 	 */
 	public static function get_file_type(string $filename): string
 	{
-		return MimeType::$TYPES[pathinfo($filename, PATHINFO_EXTENSION)] ?? 'application/octet-stream';
+		return MimeType::TYPES[pathinfo($filename, PATHINFO_EXTENSION)] ?? 'application/octet-stream';
 	}
 
 	/**

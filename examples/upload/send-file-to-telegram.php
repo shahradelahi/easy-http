@@ -13,9 +13,9 @@ $response = (new \EasyHttp\Client())->post('https://api.telegram.org/bot' . $you
 		'caption' => 'Привет!',
 	],
 	'multipart' => \EasyHttp\FormData::create([
-		'photo' => getcwd() . '/../docs/download.png'
+		'photo' => getcwd() . '/../docs/uploads/download.png'
 	])
 ]);
 
 
-echo '<pre>' . \EasyHttp\Util\Utils::prettyJson($response->getBody()) . '</pre>';
+echo '<pre>' . \EasyHttp\Utils\Toolkit::prettyJson($response->getBody()) . '</pre>';

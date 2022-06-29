@@ -12,7 +12,10 @@ namespace EasyHttp;
 class MimeType
 {
 
-	public static array $TYPES = [
+	/**
+	 * @var array
+	 */
+	public const TYPES = [
 		'ez' => "application/andrew-inset",
 		'aw' => "application/applixware",
 		'atom' => "application/atom+xml",
