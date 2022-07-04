@@ -1,8 +1,8 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
 
-use EasyHttp\Utils\WSConfig;
 use EasyHttp\WebSocket;
+use EasyHttp\WebSocketConfig;
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -16,7 +16,7 @@ function startTicker(array $ids, callable $callback): void
 	try {
 
 		$close_time = time() + 10;
-		$ClientConfig = (new WSConfig())->setFragmentSize(8096)->setTimeout(15);
+		$ClientConfig = (new WebSocketConfig())->setFragmentSize(8096)->setTimeout(15);
 		$WebSocketClient = new WebSocket('wss://stream.coinmarketcap.com/price/latest', $ClientConfig);
 
 		$WebSocketClient->send(json_encode([

@@ -15,23 +15,20 @@ interface WebSocketContract
 {
 
 	/**
-	 * @param ConnectionContract $conn
-	 * @return mixed
+	 * @return void
 	 */
-	public function onOpen(ConnectionContract $conn): mixed;
+	public function onOpen(): void;
 
 	/**
-	 * @param ConnectionContract $conn
-	 * @return mixed
-	 * @throws WebSocketException
+	 * @param int $closeStatus
+	 * @return void
 	 */
-	public function onClose(ConnectionContract $conn): mixed;
+	public function onClose(int $closeStatus): void;
 
 	/**
-	 * @param ConnectionContract $conn
-	 * @param WebSocketException $ex
-	 * @return mixed
+	 * @param WebSocketException $exception
+	 * @return void
 	 */
-	public function onError(ConnectionContract $conn, WebSocketException $ex): mixed;
+	public function onError(WebSocketException $exception): void;
 
 }

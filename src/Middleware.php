@@ -2,6 +2,8 @@
 
 namespace EasyHttp;
 
+use EasyHttp\Contracts\CommonsContract;
+use EasyHttp\Exceptions\ConnectionException;
 use EasyHttp\Model\HttpOptions;
 use EasyHttp\Utils\Toolkit;
 
@@ -136,6 +138,70 @@ class Middleware
 			curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);
 			curl_setopt($handler, CURLOPT_POSTFIELDS, $form_data->getFiles());
 		}
+	}
+
+	/**
+	 * @param mixed $socket
+	 * @param int $len
+	 * @return string|null
+	 * @throws ConnectionException
+	 */
+	public static function stream_read(mixed $socket, int $len): string|null
+	{
+		if (!is_resource($socket)) {
+			throw new ConnectionException(sprintf(
+				'%s is not a valid resource.', $socket
+			));
+		}
+
+		$data = '';
+		while (($dataLen = strlen($data)) < $len) {
+			$buff = fread($socket, $len - $dataLen);
+
+			if ($buff === false) {
+//				$metadata = stream_get_meta_data($socket);
+//				throw new ConnectionException(
+//					sprintf('Broken frame, read %s of stated %s bytes.  Stream state: %s', strlen($data), $len, json_encode($metadata)),
+//					CommonsContract::CLIENT_BROKEN_FRAME
+//				);
+				return null;
+			}
+
+			if ($buff === '') {
+				$metadata = stream_get_meta_data($socket);
+				throw new ConnectionException(
+					sprintf('Empty read; connection dead?  Stream state: %s', json_encode($metadata)),
+					CommonsContract::CLIENT_EMPTY_READ
+				);
+			}
+			$data .= $buff;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * @param mixed $socket
+	 * @param string $data
+	 * @return bool
+	 * @throws ConnectionException
+	 */
+	public static function stream_write(mixed $socket, string $data): bool
+	{
+		if (!is_resource($socket)) {
+			throw new ConnectionException(sprintf('%s is not a valid resource.', $socket));
+		}
+
+		$written = fwrite($socket, $data);
+
+		if ($written < strlen($data)) {
+			throw new ConnectionException(
+				sprintf('Could only write %s out of %s bytes.', $written, strlen($data)),
+				CommonsContract::CLIENT_COULD_ONLY_WRITE_LESS
+			);
+		}
+
+		return true;
 	}
 
 }

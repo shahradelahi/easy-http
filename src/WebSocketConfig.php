@@ -1,17 +1,17 @@
 <?php
 
-namespace EasyHttp\Utils;
+namespace EasyHttp;
 
 use EasyHttp\Contracts\WscCommonsContract;
 
 /**
- * WSConfig class
+ * WebSocketConfig class
  *
  * @link    https://github.com/shahradelahi/easy-http
  * @author  Arthur Kushman (https://github.com/arthurkushman)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
  */
-class WSConfig
+class WebSocketConfig
 {
 
 	/**
@@ -94,9 +94,9 @@ class WSConfig
 
 	/**
 	 * @param int $timeout
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setTimeout(int $timeout): WSConfig
+	public function setTimeout(int $timeout): WebSocketConfig
 	{
 		$this->timeout = $timeout;
 		return $this;
@@ -112,9 +112,9 @@ class WSConfig
 
 	/**
 	 * @param array $headers
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setHeaders(array $headers): WSConfig
+	public function setHeaders(array $headers): WebSocketConfig
 	{
 		$this->headers = $headers;
 		return $this;
@@ -130,9 +130,9 @@ class WSConfig
 
 	/**
 	 * @param int $fragmentSize
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setFragmentSize(int $fragmentSize): WSConfig
+	public function setFragmentSize(int $fragmentSize): WebSocketConfig
 	{
 		$this->fragmentSize = $fragmentSize;
 		return $this;
@@ -148,9 +148,9 @@ class WSConfig
 
 	/**
 	 * @param mixed $context
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setContext(mixed $context): WSConfig
+	public function setContext(mixed $context): WebSocketConfig
 	{
 		$this->context = $context;
 		return $this;
@@ -166,9 +166,9 @@ class WSConfig
 
 	/**
 	 * @param string $scheme
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setScheme(string $scheme): WSConfig
+	public function setScheme(string $scheme): WebSocketConfig
 	{
 		$this->scheme = $scheme;
 		return $this;
@@ -184,9 +184,9 @@ class WSConfig
 
 	/**
 	 * @param string $host
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setHost(string $host): WSConfig
+	public function setHost(string $host): WebSocketConfig
 	{
 		$this->host = $host;
 		return $this;
@@ -202,9 +202,9 @@ class WSConfig
 
 	/**
 	 * @param array $urlParts
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setUser(array $urlParts): WSConfig
+	public function setUser(array $urlParts): WebSocketConfig
 	{
 		$this->user = $urlParts['user'] ?? '';
 		return $this;
@@ -220,9 +220,9 @@ class WSConfig
 
 	/**
 	 * @param array $urlParts
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setPassword(array $urlParts): WSConfig
+	public function setPassword(array $urlParts): WebSocketConfig
 	{
 		$this->password = $urlParts['pass'] ?? '';
 		return $this;
@@ -238,9 +238,9 @@ class WSConfig
 
 	/**
 	 * @param array $urlParts
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setPort(array $urlParts): WSConfig
+	public function setPort(array $urlParts): WebSocketConfig
 	{
 		$this->port = $urlParts['port'] ?? ($this->scheme === 'wss' ? '443' : '80');
 		return $this;
@@ -256,9 +256,9 @@ class WSConfig
 
 	/**
 	 * @param array $contextOptions
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setContextOptions(array $contextOptions): WSConfig
+	public function setContextOptions(array $contextOptions): WebSocketConfig
 	{
 		$this->contextOptions = $contextOptions;
 		return $this;
@@ -267,9 +267,9 @@ class WSConfig
 	/**
 	 * @param string $ip
 	 * @param string $port
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setProxy(string $ip, string $port): WSConfig
+	public function setProxy(string $ip, string $port): WebSocketConfig
 	{
 		$this->hasProxy = true;
 		$this->proxyIp = $ip;
@@ -283,9 +283,9 @@ class WSConfig
 	 *
 	 * @param string $userName
 	 * @param string $password
-	 * @return WSConfig
+	 * @return WebSocketConfig
 	 */
-	public function setProxyAuth(string $userName, string $password): WSConfig
+	public function setProxyAuth(string $userName, string $password): WebSocketConfig
 	{
 		$this->proxyAuth = (empty($userName) === false && empty($password) === false) ? base64_encode($userName . ':' . $password) : null;
 		return $this;

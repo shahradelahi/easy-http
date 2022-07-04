@@ -5,7 +5,7 @@ namespace EasyHttp\Traits;
 use EasyHttp\Contracts\CommonsContract;
 use EasyHttp\Exceptions\BadUriException;
 use EasyHttp\Exceptions\ConnectionException;
-use EasyHttp\Utils\WSConfig;
+use EasyHttp\WebSocketConfig;
 
 /**
  * WSClientTrait class
@@ -20,12 +20,12 @@ trait WSClientTrait
 	/**
 	 * Validates whether server sent valid upgrade response
 	 *
-	 * @param WSConfig $config
+	 * @param WebSocketConfig $config
 	 * @param string $pathWithQuery
 	 * @param string $key
 	 * @throws ConnectionException
 	 */
-	private function validateResponse(WSConfig $config, string $pathWithQuery, string $key): void
+	private function validateResponse(WebSocketConfig $config, string $pathWithQuery, string $key): void
 	{
 		$response = stream_get_line($this->socket, self::DEFAULT_RESPONSE_HEADER, "\r\n\r\n");
 		if (!preg_match(self::SEC_WEBSOCKET_ACCEPT_PTTRN, $response, $matches)) {
@@ -39,19 +39,21 @@ trait WSClientTrait
 		$keyAccept = trim($matches[1]);
 		$expectedResponse = base64_encode(pack('H*', sha1($key . self::SERVER_KEY_ACCEPT)));
 		if ($keyAccept !== $expectedResponse) {
-			throw new ConnectionException('Server sent bad upgrade response.',
-				CommonsContract::CLIENT_INVALID_UPGRADE_RESPONSE);
+			throw new ConnectionException(
+				'Server sent bad upgrade response.',
+				CommonsContract::CLIENT_INVALID_UPGRADE_RESPONSE
+			);
 		}
 	}
 
 	/**
 	 *  Gets host uri based on protocol
 	 *
-	 * @param WSConfig $config
+	 * @param WebSocketConfig $config
 	 * @return string
 	 * @throws BadUriException
 	 */
-	private function getHostUri(WSConfig $config): string
+	private function getHostUri(WebSocketConfig $config): string
 	{
 		if (in_array($config->getScheme(), ['ws', 'wss'], true) === false) {
 			throw new BadUriException(
@@ -119,10 +121,10 @@ trait WSClientTrait
 	}
 
 	/**
-	 * @return null|string
+	 * @return string|null
 	 * @throws \Exception
 	 */
-	protected function receiveFragment(): ?string
+	protected function receiveFragment(): string|null
 	{
 		$data = $this->read(2);
 
@@ -170,12 +172,12 @@ trait WSClientTrait
 		if (!$final) {
 			$this->hugePayload .= $payload;
 
-			return NULL;
+			return null;
 		}
 
 		if ($this->hugePayload) {
 			$payload = $this->hugePayload .= $payload;
-			$this->hugePayload = NULL;
+			$this->hugePayload = null;
 		}
 
 		return $payload;
@@ -235,6 +237,24 @@ trait WSClientTrait
 		}
 
 		$this->write($frame);
+	}
+
+	/**
+	 * Sec-WebSocket-Key generator
+	 *
+	 * @return string   the 16 character length key
+	 * @throws \Exception
+	 */
+	private function generateKey(): string
+	{
+		$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"$&/()=[]{}0123456789';
+		$key = '';
+		$chLen = strlen($chars);
+		for ($i = 0; $i < self::KEY_GEN_LENGTH; $i++) {
+			$key .= $chars[random_int(0, $chLen - 1)];
+		}
+
+		return base64_encode($key);
 	}
 
 }

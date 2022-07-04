@@ -96,4 +96,25 @@ class Toolkit
         return (bool)preg_match_all('/' . $value . '/i', $string);
     }
 
+	/**
+	 * Millisecond sleep
+	 *
+	 * @param int $milliseconds The milliseconds
+	 * @return void
+	 */
+	public static function sleep(int $milliseconds): void
+	{
+		usleep($milliseconds * 1000);
+	}
+
+	/**
+	 * Get current time in milliseconds
+	 *
+	 * @return int
+	 */
+	public static function time(): int
+	{
+		return (int)(microtime(true) * 1000);
+	}
+
 }

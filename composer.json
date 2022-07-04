@@ -3,7 +3,12 @@
    "description": "A Easy HTTP Client library for PHP",
    "keywords": ["http", "client", "curl", "websoket", "php"],
    "minimum-stability": "stable",
+   "homepage": "https://github.com/shahradelahi/easy-http",
    "license": "MIT",
+   "support": {
+	  "issues": "https://github.com/shahradelahi/easy-http/issues",
+	  "source": "https://github.com/shahradelahi/easy-http"
+   },
    "authors": [
 	  {
 		 "name": "Shahrad Elahi",
