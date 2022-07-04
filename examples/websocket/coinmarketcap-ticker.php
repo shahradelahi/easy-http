@@ -1,54 +1,67 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
 
+use EasyHttp\Exceptions\WebSocketException;
 use EasyHttp\WebSocket;
 use EasyHttp\WebSocketConfig;
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-/**
- * @param array $ids
- * @param callable $callback
- */
-function startTicker(array $ids, callable $callback): void
-{
-	try {
+$close_time = time() + 10;
+$SocketClient = new WebSocket();
 
-		$close_time = time() + 10;
-		$ClientConfig = (new WebSocketConfig())->setFragmentSize(8096)->setTimeout(15);
-		$WebSocketClient = new WebSocket('wss://stream.coinmarketcap.com/price/latest', $ClientConfig);
-
-		$WebSocketClient->send(json_encode([
-			'method' => 'subscribe',
-			'id' => 'price',
-			'data' => [
-				'cryptoIds' => $ids,
-				'index' => 'detail'
-			]
-		]));
-
-		while ($close_time > time()) {
-			if (($message = $WebSocketClient->receive()) != "") {
-				$json_response = json_decode($message, true);
-
-				if ($json_response['id'] == "price") {
-					$callback($json_response);
-				}
-			}
-		}
-
-	} catch (Exception $e) {
-		echo "<b>Error</b>: " . $e->getMessage();
+$SocketClient->onWhile = function (WebSocket $socket) use ($close_time) {
+	if (time() >= $close_time) {
+		$socket->close();
 	}
-}
+};
 
-echo "<pre>Start Tome: " . date('Y-m-d H:i:s') . "</pre><br/>";
+$SocketClient->onOpen = function (WebSocket $socket) {
+	echo sprintf(
+		'<pre><b>%s</b>: Connected to %s</pre><br/>',
+		date('Y-m-d H:i:s'),
+		$socket->getSocketUrl()
+	);
 
-$responses = [];
-startTicker([1, 1027, 825, 3408, 1839, 4687, 52, 2010, 5426], function ($data) use (&$responses) {
-	$responses[] = $data;
-});
+	$socket->send(json_encode([
+		'method' => 'subscribe',
+		'id' => 'price',
+		'data' => [
+			'cryptoIds' => [1, 1027, 825, 3408, 1839, 4687, 52, 2010, 5426],
+			'index' => 'detail'
+		]
+	]));
+};
 
-echo "<pre>" . json_encode($responses, JSON_PRETTY_PRINT) . "</pre><br/>";
-echo "<pre>End Time: " . date('Y-m-d H:i:s') . "</pre>";
+$SocketClient->onClose = function (WebSocket $socket, int $closeStatus) {
+	echo sprintf(
+		'<pre><b>%s</b>: Disconnected with status: %s</pre><br/>',
+		date('Y-m-d H:i:s'),
+		$closeStatus
+	);
+};
+
+$SocketClient->onMessage = function (WebSocket $socket, string $message) {
+	$data = json_decode($message, true);
+	if (isset($data['id']) && $data['id'] == "price") {
+		echo sprintf(
+			'<pre><b>%s</b>: %s</pre><br/>',
+			date('Y-m-d H:i:s'),
+			$message
+		);
+	}
+};
+
+$SocketClient->onError = function (WebSocket $socket, WebSocketException $exception) {
+	echo sprintf(
+		"<pre>%s: Error: %s<br>File: %s:%s<br></pre><br>",
+		date('Y-m-d H:i:s'),
+		$exception->getMessage(),
+		$exception->getFile(),
+		$exception->getLine()
+	);
+};
+
+$SocketClient->connect(
+	'wss://stream.coinmarketcap.com/price/latest',
+	(new WebSocketConfig())->setFragmentSize(8096)->setTimeout(15)
+);

@@ -150,7 +150,7 @@ class Middleware
 	{
 		if (!is_resource($socket)) {
 			throw new ConnectionException(sprintf(
-				'%s is not a valid resource.', $socket
+				'%s is not a valid resource. Datatype: %s', $socket, gettype($socket)
 			));
 		}
 
@@ -189,7 +189,9 @@ class Middleware
 	public static function stream_write(mixed $socket, string $data): bool
 	{
 		if (!is_resource($socket)) {
-			throw new ConnectionException(sprintf('%s is not a valid resource.', $socket));
+			throw new ConnectionException(sprintf(
+				'%s is not a valid resource. Datatype: %s', $socket, gettype($socket)
+			));
 		}
 
 		$written = fwrite($socket, $data);

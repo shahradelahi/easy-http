@@ -85,6 +85,11 @@ class WebSocketConfig
 	private array $contextOptions = [];
 
 	/**
+	 * @var int
+	 */
+	private int $pingInterval = WscCommonsContract::DEFAULT_PING_INTERVAL;
+
+	/**
 	 * @return int
 	 */
 	public function getTimeout(): int
@@ -100,6 +105,24 @@ class WebSocketConfig
 	{
 		$this->timeout = $timeout;
 		return $this;
+	}
+
+	/**
+	 * @param int $int
+	 * @return $this
+	 */
+	public function setPingInterval(int $int): WebSocketConfig
+	{
+		$this->pingInterval = $int;
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPingInterval(): int
+	{
+		return $this->pingInterval;
 	}
 
 	/**

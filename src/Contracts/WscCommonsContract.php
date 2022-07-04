@@ -31,5 +31,6 @@ interface WscCommonsContract
 	public const MASK_255 = 255;
 
 	public const KEY_GEN_LENGTH = 16;
+	public const DEFAULT_PING_INTERVAL = 5;
 
 }

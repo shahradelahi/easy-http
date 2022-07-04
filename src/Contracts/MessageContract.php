@@ -3,6 +3,7 @@
 namespace EasyHttp\Contracts;
 
 use EasyHttp\Exceptions\WebSocketException;
+use EasyHttp\WebSocket;
 
 /**
  * MessageContract class
@@ -15,10 +16,10 @@ interface MessageContract
 {
 
 	/**
+	 * @param WebSocket $socket
 	 * @param string $message
 	 * @return void
-	 * @throws WebSocketException
 	 */
-	public function onMessage(string $message): void;
+	public function onMessage(WebSocket $socket, string $message): void;
 
 }

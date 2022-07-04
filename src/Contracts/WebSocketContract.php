@@ -3,6 +3,7 @@
 namespace EasyHttp\Contracts;
 
 use EasyHttp\Exceptions\WebSocketException;
+use EasyHttp\WebSocket;
 
 /**
  * WebSocketContract class
@@ -15,20 +16,23 @@ interface WebSocketContract
 {
 
 	/**
+	 * @param WebSocket $socket
 	 * @return void
 	 */
-	public function onOpen(): void;
+	public function onOpen(WebSocket $socket): void;
 
 	/**
+	 * @param WebSocket $socket
 	 * @param int $closeStatus
 	 * @return void
 	 */
-	public function onClose(int $closeStatus): void;
+	public function onClose(WebSocket $socket, int $closeStatus): void;
 
 	/**
+	 * @param WebSocket $socket
 	 * @param WebSocketException $exception
 	 * @return void
 	 */
-	public function onError(WebSocketException $exception): void;
+	public function onError(WebSocket $socket, WebSocketException $exception): void;
 
 }

@@ -64,5 +64,6 @@ interface CommonsContract
 	public const CLIENT_BROKEN_FRAME = 110;
 	public const CLIENT_EMPTY_READ = 111;
 	public const SERVER_INVALID_STREAM_CONTEXT = 112;
+	public const CLIENT_CONNECTION_NOT_ESTABLISHED = 113;
 
 }

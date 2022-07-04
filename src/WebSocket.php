@@ -22,11 +22,36 @@ class WebSocket implements WscCommonsContract
 	use WSClientTrait;
 
 	/**
+	 * @var callable|null
+	 */
+	public $onOpen = null;
+
+	/**
+	 * @var callable|null
+	 */
+	public $onClose = null;
+
+	/**
+	 * @var callable|null
+	 */
+	public $onError = null;
+
+	/**
+	 * @var callable|null
+	 */
+	public $onMessage = null;
+
+	/**
+	 * @var callable|null
+	 */
+	public $onWhile = null;
+
+	/**
 	 * App version
 	 *
 	 * @var string
 	 */
-	public const VERSION = 'v1.0.0';
+	public const VERSION = 'v1.2.0';
 
 	/**
 	 * @var resource|bool
@@ -81,33 +106,42 @@ class WebSocket implements WscCommonsContract
 	protected string $socketUrl;
 
 	/**
-	 * @var ?SocketClient
-	 */
-	protected ?SocketClient $client = null;
-
-	/**
 	 * Sets parameters for Web Socket Client intercommunication
 	 *
-	 * @param SocketClient|string $clientOrUri pass the SocketClient object or the URI of the server
-	 * @param ?WebSocketConfig $config if you're passing the URI, you can pass the config object
+	 * @param ?SocketClient $client leave it empty if you want to use default socket client
 	 */
-	public function __construct(SocketClient|string $clientOrUri, ?WebSocketConfig $config = null)
+	public function __construct(?SocketClient $client = null)
 	{
-		if ($clientOrUri instanceof SocketClient) {
-			$this->client = $clientOrUri;
-		} else {
-			$this->connect($clientOrUri, $config === null ? new WebSocketConfig() : $config);
+		if ($client instanceof SocketClient) {
+
+			$this->onOpen = function ($socket) use ($client) {
+				$client->onOpen($socket);
+			};
+
+			$this->onClose = function ($socket, int $closeStatus) use ($client) {
+				$client->onClose($socket, $closeStatus);
+			};
+
+			$this->onError = function ($socket, WebSocketException $exception) use ($client) {
+				$client->onError($socket, $exception);
+			};
+
+			$this->onMessage = function ($socket, string $message) use ($client) {
+				$client->onMessage($socket, $message);
+			};
 		}
+
+		$this->config = $config ?? new WebSocketConfig();
 	}
 
 	/**
 	 * @param string $socketUrl string that represents the URL of the Web Socket server. e.g. ws://localhost:1337 or wss://localhost:1337
-	 * @param WebSocketConfig $config The configuration for the Web Socket client
+	 * @param ?WebSocketConfig $config The configuration for the Web Socket client
 	 */
-	public function connect(string $socketUrl, WebSocketConfig $config): void
+	public function connect(string $socketUrl, ?WebSocketConfig $config = null): void
 	{
 		try {
-			$this->config = $config;
+			$this->config = $config ?? new WebSocketConfig();
 			$this->socketUrl = $socketUrl;
 			$urlParts = parse_url($this->socketUrl);
 
@@ -167,26 +201,58 @@ class WebSocket implements WscCommonsContract
 
 			$this->validateResponse($this->config, $pathWithQuery, $key);
 			$this->isConnected = true;
-
-			if ($this->client !== null) {
-				$this->client->setConnection($this);
-				$this->client->onOpen();
-				while ($this->isConnected()) {
-					if (is_string(($message = $this->receive()))) {
-						$this->client->onMessage($message);
-					}
-				}
-				$this->client->onClose($this->closeStatus);
-			}
+			$this->onConnection();
 
 		} catch (\Exception $e) {
-			$this->client->onError(
-				new WebSocketException(
+			if (is_callable($this->onError) && $this->onError) {
+				call_user_func($this->onError, $this, new WebSocketException(
 					$e->getMessage(),
 					$e->getCode(),
 					$e
-				)
-			);
+				));
+			}
+		}
+	}
+
+	/**
+	 * Reconnect to the Web Socket server
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function reconnect(): void
+	{
+		if ($this->isConnected) {
+			$this->close();
+		}
+
+		$this->connect($this->socketUrl, $this->config);
+	}
+
+	/**
+	 * @return void
+	 * @throws WebSocketException|\Exception
+	 */
+	private function onConnection(): void
+	{
+		if (is_callable($this->onOpen) && $this->onOpen) {
+			call_user_func($this->onOpen, $this);
+		}
+
+		while ($this->isConnected()) {
+			if (is_callable($this->onWhile) && $this->onWhile) {
+				call_user_func($this->onWhile, $this);
+			}
+
+			if (is_string(($message = $this->receive()))) {
+				if (is_callable($this->onMessage) && $this->onMessage) {
+					call_user_func($this->onMessage, $this, $message);
+				}
+			}
+		}
+
+		if (is_callable($this->onClose) && $this->onClose) {
+			call_user_func($this->onClose, $this, $this->closeStatus);
 		}
 	}
 
@@ -207,11 +273,14 @@ class WebSocket implements WscCommonsContract
 			STREAM_CLIENT_CONNECT,
 			$this->getStreamContext()
 		);
+
 		$write = "CONNECT {$this->config->getProxyIp()}:{$this->config->getProxyPort()} HTTP/1.1\r\n";
 		$auth = $this->config->getProxyAuth();
+
 		if ($auth !== NULL) {
 			$write .= "Proxy-Authorization: Basic {$auth}\r\n";
 		}
+
 		$write .= "\r\n";
 		fwrite($sock, $write);
 		$resp = fread($sock, 1024);
@@ -250,13 +319,15 @@ class WebSocket implements WscCommonsContract
 	 */
 	private function getPathWithQuery(mixed $urlParts): string
 	{
-		$path = isset($urlParts['path']) ? $urlParts['path'] : '/';
-		$query = isset($urlParts['query']) ? $urlParts['query'] : '';
-		$fragment = isset($urlParts['fragment']) ? $urlParts['fragment'] : '';
+		$path = $urlParts['path'] ?? '/';
+		$query = $urlParts['query'] ?? '';
+		$fragment = $urlParts['fragment'] ?? '';
 		$pathWithQuery = $path;
+
 		if (!empty($query)) {
 			$pathWithQuery .= '?' . $query;
 		}
+
 		if (!empty($fragment)) {
 			$pathWithQuery .= '#' . $fragment;
 		}
@@ -312,16 +383,14 @@ class WebSocket implements WscCommonsContract
 	/**
 	 * @param int $timeout
 	 * @param null $microSecs
-	 * @return WebSocket
+	 * @return void
 	 */
-	public function setTimeout(int $timeout, $microSecs = null): WebSocket
+	public function setTimeout(int $timeout, $microSecs = null): void
 	{
 		$this->config->setTimeout($timeout);
 		if ($this->socket && get_resource_type($this->socket) === 'stream') {
 			stream_set_timeout($this->socket, $timeout, $microSecs);
 		}
-
-		return $this;
 	}
 
 	/**
@@ -334,12 +403,15 @@ class WebSocket implements WscCommonsContract
 	public function send($payload, string $opcode = CommonsContract::EVENT_TYPE_TEXT): void
 	{
 		if (!$this->isConnected) {
-			$this->connect($this->socketUrl, new WebSocketConfig());
+			throw new \Exception(
+				"Can't send message. Connection is not established.",
+				CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
+			);
 		}
 
 		if (array_key_exists($opcode, self::$opcodes) === false) {
 			throw new BadOpcodeException(
-				"Bad opcode '$opcode'.  Try 'text' or 'binary'.",
+				sprintf("Bad opcode '%s'.  Try 'text' or 'binary'.", $opcode),
 				CommonsContract::CLIENT_BAD_OPCODE
 			);
 		}
@@ -364,8 +436,11 @@ class WebSocket implements WscCommonsContract
 	 */
 	public function receive(): string|null
 	{
-		if (!$this->isConnected) {
-			$this->connect($this->socketUrl, new WebSocketConfig());
+		if (!$this->isConnected && $this->isClosing === false) {
+			throw new WebSocketException(
+				"Your unexpectedly disconnected from the server",
+				CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
+			);
 		}
 
 		$this->hugePayload = '';
@@ -397,12 +472,11 @@ class WebSocket implements WscCommonsContract
 	}
 
 	/**
-	 * @param string $data
-	 * @throws ConnectionException
+	 * @return string
 	 */
-	protected function write(string $data): void
+	public function getSocketUrl(): string
 	{
-		Middleware::stream_write($this->socket, $data);
+		return $this->socketUrl;
 	}
 
 	/**
@@ -412,7 +486,20 @@ class WebSocket implements WscCommonsContract
 	 */
 	protected function read(int $len): string|null
 	{
-		return Middleware::stream_read($this->socket, $len) ?: false;
+		if ($this->socket && $this->isConnected()) {
+			return Middleware::stream_read($this->socket, $len);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param string $data
+	 * @throws ConnectionException
+	 */
+	protected function write(string $data): void
+	{
+		Middleware::stream_write($this->socket, $data);
 	}
 
 	/**

@@ -127,6 +127,9 @@ trait WSClientTrait
 	protected function receiveFragment(): string|null
 	{
 		$data = $this->read(2);
+		if (is_string($data) === false) {
+			return null;
+		}
 
 		$final = (bool)(ord($data[0]) & 1 << 7);
 
