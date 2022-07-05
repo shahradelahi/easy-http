@@ -159,11 +159,6 @@ class Middleware
 			$buff = fread($socket, $len - $dataLen);
 
 			if ($buff === false) {
-//				$metadata = stream_get_meta_data($socket);
-//				throw new ConnectionException(
-//					sprintf('Broken frame, read %s of stated %s bytes.  Stream state: %s', strlen($data), $len, json_encode($metadata)),
-//					CommonsContract::CLIENT_BROKEN_FRAME
-//				);
 				return null;
 			}
 
@@ -205,5 +200,9 @@ class Middleware
 
 		return true;
 	}
+
+	/**
+	 * Stream connect
+	 */
 
 }

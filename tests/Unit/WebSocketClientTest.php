@@ -35,7 +35,11 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
 			$socket->close();
 		};
 
-		$socket->connect($this->url, new WebSocketConfig());
+		$socket->onError = function (WebSocket $socket, WebSocketException $e) {
+			echo $e->getMessage();
+		};
+
+		$socket->connect($this->url);
 	}
 
 	/**

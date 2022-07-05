@@ -5,6 +5,8 @@ namespace EasyHttp\Traits;
 use EasyHttp\Contracts\CommonsContract;
 use EasyHttp\Exceptions\BadUriException;
 use EasyHttp\Exceptions\ConnectionException;
+use EasyHttp\Middleware;
+use EasyHttp\Utils\Toolkit;
 use EasyHttp\WebSocketConfig;
 
 /**
@@ -79,7 +81,7 @@ trait WSClientTrait
 			} else {
 				$data = $this->read(8); // 127: Payload is a 64-bit unsigned int
 			}
-			$payloadLength = bindec(self::sprintB($data));
+			$payloadLength = bindec(Toolkit::sprintB($data));
 		}
 
 		return $payloadLength;
@@ -258,6 +260,30 @@ trait WSClientTrait
 		}
 
 		return base64_encode($key);
+	}
+
+	/**
+	 * @param int $len
+	 * @return string|null
+	 * @throws ConnectionException
+	 */
+	protected function read(int $len): string|null
+	{
+		if ($this->socket && $this->isConnected()) {
+			return Middleware::stream_read($this->socket, $len);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param string $data
+	 * @return void
+	 * @throws ConnectionException
+	 */
+	protected function write(string $data): void
+	{
+		Middleware::stream_write($this->socket, $data);
 	}
 
 }

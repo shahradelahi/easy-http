@@ -117,4 +117,21 @@ class Toolkit
 		return (int)(microtime(true) * 1000);
 	}
 
+	/**
+	 * Helper to convert a binary to a string of '0' and '1'.
+	 *
+	 * @param string $string
+	 * @return string
+	 */
+	public static function sprintB(string $string): string
+	{
+		$return = '';
+		$strLen = strlen($string);
+		for ($i = 0; $i < $strLen; $i++) {
+			$return .= sprintf('%08b', ord($string[$i]));
+		}
+
+		return $return;
+	}
+
 }
