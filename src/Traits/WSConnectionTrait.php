@@ -162,7 +162,7 @@ trait WSConnectionTrait
 	{
 		$this->safeCall($this->onOpen, $this);
 
-		while ($this->isConnected()) {
+		while ($this->isConnected() && $this->isClosing === false) {
 			$this->safeCall($this->onWhile, $this);
 
 			if (is_string(($message = $this->receive()))) {
@@ -245,7 +245,7 @@ trait WSConnectionTrait
 	/**
 	 * Tell the socket to close.
 	 *
-	 * @param integer $status http://tools.ietf.org/html/rfc6455#section-7.4
+	 * @param integer $status https://github.com/Luka967/websocket-close-codes
 	 * @param string $message A closing message, max 125 bytes.
 	 * @return bool|null|string
 	 * @throws \Exception
@@ -260,6 +260,7 @@ trait WSConnectionTrait
 		}
 
 		$this->send($statusStr . $message, CommonsContract::EVENT_TYPE_CLOSE);
+		$this->closeStatus = $status;
 		$this->isClosing = true;
 
 		return $this->receive(); // Receiving a close frame will close the socket now.
