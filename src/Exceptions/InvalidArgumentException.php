@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Exceptions;
 
@@ -12,6 +12,6 @@ namespace EasyHttp\Exceptions;
 class InvalidArgumentException extends \Exception
 {
 
-	protected $message = 'Invalid argument';
+    protected $message = 'Invalid argument';
 
 }

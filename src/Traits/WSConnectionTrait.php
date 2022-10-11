@@ -1,9 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Traits;
 
 use EasyHttp\Contracts\CommonsContract;
 use EasyHttp\Exceptions\BadOpcodeException;
+use EasyHttp\Exceptions\BadUriException;
 use EasyHttp\Exceptions\ConnectionException;
 use EasyHttp\Exceptions\WebSocketException;
 use EasyHttp\WebSocketConfig;
@@ -18,252 +19,276 @@ use EasyHttp\WebSocketConfig;
 trait WSConnectionTrait
 {
 
-	/**
-	 * @var callable|null
-	 */
-	public $onOpen = null;
+    /**
+     * Allowed events
+     *
+     * @var array
+     */
+    private array $allowedEvents = [
+        'open',
+        'close',
+        'error',
+        'message',
+        'meantime',
+    ];
 
-	/**
-	 * @var callable|null
-	 */
-	public $onClose = null;
+    /**
+     * Registered events
+     *
+     * @var array
+     */
+    private array $registeredEvents = [];
 
-	/**
-	 * @var callable|null
-	 */
-	public $onError = null;
+    /**
+     * @var bool
+     */
+    private bool $isConnected = false;
 
-	/**
-	 * @var callable|null
-	 */
-	public $onMessage = null;
+    /**
+     * @var bool
+     */
+    private bool $isClosing = false;
 
-	/**
-	 * @var callable|null
-	 */
-	public $onWhile = null;
+    /**
+     * Default headers
+     *
+     * @var array
+     */
+    private array $defaultHeaders = [
+        'Connection' => 'Upgrade',
+        'Upgrade' => 'WebSocket',
+        'Sec-Websocket-Version' => '13',
+    ];
 
-	/**
-	 * @var bool
-	 */
-	private bool $isConnected = false;
+    /**
+     * Reconnect to the Web Socket server
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function reconnect(): void
+    {
+        if ($this->isConnected) {
+            $this->close();
+        }
 
-	/**
-	 * @var bool
-	 */
-	private bool $isClosing = false;
+        $this->connect($this->socketUrl, $this->config);
+    }
 
-	/**
-	 * Default headers
-	 *
-	 * @var array
-	 */
-	private array $defaultHeaders = [
-		'Connection' => 'Upgrade',
-		'Upgrade' => 'WebSocket',
-		'Sec-Websocket-Version' => '13',
-	];
+    /**
+     * Tell the socket to close.
+     *
+     * @param integer $status https://github.com/Luka967/websocket-close-codes
+     * @param string $message A closing message, max 125 bytes.
+     * @return bool|null|string
+     * @throws \Exception
+     */
+    public function close(int $status = 1000, string $message = 'ttfn'): bool|null|string
+    {
+        $statusBin = sprintf('%016b', $status);
+        $statusStr = '';
 
-	/**
-	 * @param string $socketUrl string that represents the URL of the Web Socket server. e.g. ws://localhost:1337 or wss://localhost:1337
-	 * @param ?WebSocketConfig $config The configuration for the Web Socket client
-	 */
-	public function connect(string $socketUrl, ?WebSocketConfig $config = null): void
-	{
-		try {
-			$this->config = $config ?? new WebSocketConfig();
-			$this->socketUrl = $socketUrl;
-			$urlParts = parse_url($this->socketUrl);
+        foreach (str_split($statusBin, 8) as $binstr) {
+            $statusStr .= chr(bindec($binstr));
+        }
 
-			$this->config->setScheme($urlParts['scheme']);
-			$this->config->setHost($urlParts['host']);
-			$this->config->setUser($urlParts);
-			$this->config->setPassword($urlParts);
-			$this->config->setPort($urlParts);
+        $this->send($statusStr . $message, CommonsContract::EVENT_TYPE_CLOSE);
+        $this->closeStatus = $status;
+        $this->isClosing = true;
 
-			$pathWithQuery = $this->getPathWithQuery($urlParts);
-			$hostUri = $this->getHostUri($this->config);
+        return $this->receive(); // Receiving a close frame will close the socket now.
+    }
 
-			$context = $this->getStreamContext();
-			if ($this->config->hasProxy()) {
-				$this->socket = $this->proxy();
-			} else {
-				$this->socket = @stream_socket_client(
-					$hostUri . ':' . $this->config->getPort(),
-					$errno,
-					$errstr,
-					$this->config->getTimeout(),
-					STREAM_CLIENT_CONNECT,
-					$context
-				);
-			}
+    /**
+     * Sends message to opened socket connection client->server
+     *
+     * @param $payload
+     * @param string $opcode
+     */
+    public function send($payload, string $opcode = CommonsContract::EVENT_TYPE_TEXT): void
+    {
+        if (!$this->isConnected) {
+            throw new WebSocketException(
+                "Can't send message. Connection is not established.",
+                CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
+            );
+        }
 
-			if ($this->socket === false) {
-				throw new ConnectionException(
-					"Could not open socket to \"{$this->config->getHost()}:{$this->config->getPort()}\": $errstr ($errno).",
-					CommonsContract::CLIENT_COULD_NOT_OPEN_SOCKET
-				);
-			}
+        if (array_key_exists($opcode, self::$opcodes) === false) {
+            throw new BadOpcodeException(
+                sprintf("Bad opcode '%s'.  Try 'text' or 'binary'.", $opcode),
+                CommonsContract::CLIENT_BAD_OPCODE
+            );
+        }
 
-			stream_set_timeout($this->socket, $this->config->getTimeout());
+        $payloadLength = strlen($payload);
+        $fragmentCursor = 0;
 
-			$key = $this->generateKey();
-			$headers = array_merge($this->defaultHeaders, [
-				'Host' => $this->config->getHost() . ':' . $this->config->getPort(),
-				'User-Agent' => 'Easy-Http/' . self::VERSION . ' (PHP/' . PHP_VERSION . ')',
-				'Sec-WebSocket-Key' => $key,
-			]);
+        while ($payloadLength > $fragmentCursor) {
+            $subPayload = substr($payload, $fragmentCursor, $this->config->getFragmentSize());
+            $fragmentCursor += $this->config->getFragmentSize();
+            $final = $payloadLength <= $fragmentCursor;
+            $this->sendFragment($final, $subPayload, $opcode, true);
+            $opcode = 'continuation';
+        }
+    }
 
-			if ($this->config->getUser() || $this->config->getPassword()) {
-				$headers['authorization'] = 'Basic ' . base64_encode($this->config->getUser() . ':' . $this->config->getPassword()) . "\r\n";
-			}
+    /**
+     * Receives message client<-server
+     *
+     * @return string|null
+     */
+    public function receive(): string|null
+    {
+        if (!$this->isConnected && $this->isClosing === false) {
+            throw new WebSocketException(
+                "Your unexpectedly disconnected from the server",
+                CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
+            );
+        }
 
-			if (!empty($this->config->getHeaders())) {
-				$headers = array_merge($headers, $this->config->getHeaders());
-			}
+        $this->hugePayload = '';
 
-			$header = $this->getHeaders($pathWithQuery, $headers);
+        return $this->receiveFragment();
+    }
 
-			$this->write($header);
+    /**
+     * @param string $socketUrl string that represents the URL of the Web Socket server. e.g. ws://localhost:1337 or wss://localhost:1337
+     * @param ?WebSocketConfig $config The configuration for the Web Socket client
+     * @throws BadUriException
+     * @throws \Exception
+     */
+    public function connect(string $socketUrl, ?WebSocketConfig $config = null): void
+    {
+        $this->config = $config ?? new WebSocketConfig();
+        $this->socketUrl = $socketUrl;
+        $urlParts = parse_url($this->socketUrl);
 
-			$this->validateResponse($this->config, $pathWithQuery, $key);
-			$this->isConnected = true;
-			$this->whileIsConnected();
+        $this->config->setScheme($urlParts['scheme']);
+        $this->config->setHost($urlParts['host']);
+        $this->config->setUser($urlParts);
+        $this->config->setPassword($urlParts);
+        $this->config->setPort($urlParts);
 
-		} catch (\Exception $e) {
-			$this->safeCall($this->onError, $this, new WebSocketException(
-				$e->getMessage(),
-				$e->getCode(),
-				$e->getPrevious()
-			));
-		}
-	}
+        $pathWithQuery = $this->getPathWithQuery($urlParts);
+        $hostUri = $this->getHostUri($this->config);
 
-	/**
-	 * Reconnect to the Web Socket server
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	public function reconnect(): void
-	{
-		if ($this->isConnected) {
-			$this->close();
-		}
+        $context = $this->getStreamContext();
+        if ($this->config->hasProxy()) {
+            $this->socket = $this->proxy();
+        } else {
+            $this->socket = @stream_socket_client(
+                $hostUri . ':' . $this->config->getPort(),
+                $errno,
+                $errstr,
+                $this->config->getTimeout(),
+                STREAM_CLIENT_CONNECT,
+                $context
+            );
+        }
 
-		$this->connect($this->socketUrl, $this->config);
-	}
+        if ($this->socket === false) {
+            throw new ConnectionException(
+                "Could not open socket to \"{$this->config->getHost()}:{$this->config->getPort()}\": $errstr ($errno).",
+                CommonsContract::CLIENT_COULD_NOT_OPEN_SOCKET
+            );
+        }
 
-	/**
-	 * @return void
-	 * @throws WebSocketException|\Exception
-	 */
-	private function whileIsConnected(): void
-	{
-		$this->safeCall($this->onOpen, $this);
+        stream_set_timeout($this->socket, $this->config->getTimeout());
 
-		while ($this->isConnected() && $this->isClosing === false) {
-			$this->safeCall($this->onWhile, $this);
+        $key = $this->generateKey();
+        $headers = array_merge($this->defaultHeaders, [
+            'Host' => $this->config->getHost() . ':' . $this->config->getPort(),
+            'User-Agent' => 'Easy-Http/' . self::VERSION . ' (PHP/' . PHP_VERSION . ')',
+            'Sec-WebSocket-Key' => $key,
+        ]);
 
-			if (is_string(($message = $this->receive()))) {
-				$this->safeCall($this->onMessage, $this, $message);
-			}
-		}
+        if ($this->config->getUser() || $this->config->getPassword()) {
+            $headers['authorization'] = 'Basic ' . base64_encode($this->config->getUser() . ':' . $this->config->getPassword()) . "\r\n";
+        }
 
-		$this->safeCall($this->onClose, $this, $this->closeStatus);
-	}
+        if (!empty($this->config->getHeaders())) {
+            $headers = array_merge($headers, $this->config->getHeaders());
+        }
 
-	/**
-	 * Execute events with safety of exceptions
-	 *
-	 * @param callable|null $callback
-	 * @param mixed ...$args
-	 * @return void
-	 */
-	private function safeCall(?callable $callback, ...$args): void
-	{
-		if (is_callable($callback) && $callback) {
-			call_user_func($callback, ...$args);
-		}
-	}
+        $header = $this->getHeaders($pathWithQuery, $headers);
 
-	/**
-	 * Sends message to opened socket connection client->server
-	 *
-	 * @param $payload
-	 * @param string $opcode
-	 * @throws \Exception
-	 */
-	public function send($payload, string $opcode = CommonsContract::EVENT_TYPE_TEXT): void
-	{
-		if (!$this->isConnected) {
-			throw new \Exception(
-				"Can't send message. Connection is not established.",
-				CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
-			);
-		}
+        $this->write($header);
 
-		if (array_key_exists($opcode, self::$opcodes) === false) {
-			throw new BadOpcodeException(
-				sprintf("Bad opcode '%s'.  Try 'text' or 'binary'.", $opcode),
-				CommonsContract::CLIENT_BAD_OPCODE
-			);
-		}
+        $this->validateResponse($this->config, $pathWithQuery, $key);
+        $this->isConnected = true;
+        $this->whileIsConnected();
+    }
 
-		$payloadLength = strlen($payload);
-		$fragmentCursor = 0;
+    /**
+     * @return void
+     */
+    private function whileIsConnected(): void
+    {
+        $this->safeCall('open', $this);
 
-		while ($payloadLength > $fragmentCursor) {
-			$subPayload = substr($payload, $fragmentCursor, $this->config->getFragmentSize());
-			$fragmentCursor += $this->config->getFragmentSize();
-			$final = $payloadLength <= $fragmentCursor;
-			$this->sendFragment($final, $subPayload, $opcode, true);
-			$opcode = 'continuation';
-		}
-	}
+        while ($this->isConnected() && $this->isClosing === false) {
+            $this->safeCall('meantime', $this);
 
-	/**
-	 * Receives message client<-server
-	 *
-	 * @return string|null
-	 * @throws \Exception
-	 */
-	public function receive(): string|null
-	{
-		if (!$this->isConnected && $this->isClosing === false) {
-			throw new WebSocketException(
-				"Your unexpectedly disconnected from the server",
-				CommonsContract::CLIENT_CONNECTION_NOT_ESTABLISHED
-			);
-		}
+            if (is_string(($message = $this->receive()))) {
+                $this->safeCall('message', $this, $message);
+            }
+        }
 
-		$this->hugePayload = '';
+        $this->safeCall('close', $this, $this->closeStatus);
+    }
 
-		return $this->receiveFragment();
-	}
+    /**
+     * Execute events with safety of exceptions
+     *
+     * @param string $type The type of event to execute
+     * @param mixed ...$args
+     * @return void
+     */
+    private function safeCall(string $type, ...$args): void
+    {
+        echo "safeCall: $type\n";
+        if (is_callable($this->registeredEvents[$type])) {
+            try {
+                call_user_func_array($this->registeredEvents[$type], $args);
 
-	/**
-	 * Tell the socket to close.
-	 *
-	 * @param integer $status https://github.com/Luka967/websocket-close-codes
-	 * @param string $message A closing message, max 125 bytes.
-	 * @return bool|null|string
-	 * @throws \Exception
-	 */
-	public function close(int $status = 1000, string $message = 'ttfn'): bool|null|string
-	{
-		$statusBin = sprintf('%016b', $status);
-		$statusStr = '';
+            } catch (\Exception $e) {
+                echo "EE:" . gettype($this->registeredEvents['error']);
+                if (is_callable($this->registeredEvents['error'])) {
+                    call_user_func_array($this->registeredEvents['error'], [$this, $e]);
+                }
+            }
 
-		foreach (str_split($statusBin, 8) as $binstr) {
-			$statusStr .= chr(bindec($binstr));
-		}
+            return;
 
-		$this->send($statusStr . $message, CommonsContract::EVENT_TYPE_CLOSE);
-		$this->closeStatus = $status;
-		$this->isClosing = true;
+        } elseif (is_callable($this->registeredEvents['error'])) {
+            call_user_func_array($this->registeredEvents['error'], [$this, new WebSocketException(
+                "The event '{$type}' is not callable.",
+                CommonsContract::CLIENT_EVENT_NOT_CALLABLE
+            )]);
+            return;
+        }
 
-		return $this->receive(); // Receiving a close frame will close the socket now.
-	}
+        throw new WebSocketException(sprintf(
+            "The event '%s' is not callable.", $type
+        ), CommonsContract::CLIENT_EVENT_NOT_CALLABLE);
+    }
+
+    /**
+     * Register a event listener
+     *
+     * @param string $event
+     * @param callable $callback
+     *
+     * @return void
+     */
+    public function on(string $event, callable $callback): void
+    {
+        if (!in_array($event, $this->allowedEvents)) {
+            throw new \RuntimeException("Event {$event} not allowed");
+        }
+
+        $this->registeredEvents[$event] = $callback;
+    }
 
 }

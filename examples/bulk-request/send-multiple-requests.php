@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
 
 // =============================== ***** =============================== //
@@ -36,7 +36,7 @@ $requests = [
     ]
 ];
 
-foreach ((new \EasyHttp\Client())->bulk($requests) as $response) {
+foreach ((new \EasyHttp\HttpClient())->bulk($requests) as $response) {
     if ($response->getStatusCode() == 200) {
         echo '<pre>' . $response->getBody() . '</pre>';
     } else {

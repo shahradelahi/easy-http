@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Exceptions;
 
@@ -12,6 +12,6 @@ namespace EasyHttp\Exceptions;
 class BadResponseException extends \Exception
 {
 
-	protected $message = 'Bad response from server';
+    protected $message = 'Bad response from server';
 
 }
