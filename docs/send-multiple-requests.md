@@ -8,7 +8,7 @@ at [`send-multiple-requests.php`](../examples/bulk-request/send-multiple-request
 In order to send multiple requests at once, you need to create a `Client` instance.
 
 ```php
-$client = new \EasyHttp\Client();
+$client = new \EasyHttp\HttpClient();
 ```
 
 Create your requests:

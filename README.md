@@ -4,7 +4,7 @@
 # Easy Http
 
 [![Build Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/build.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/build-status/master)
-[![Coverage Status](https://coveralls.io/repos/shahradelahi/easy-http/badge.png?branch=master)](https://coveralls.io/r/shahradelahi/easy-http?branch=master)
+[![Coverage Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?branch=master)
 [![Code Quality](https://img.shields.io/scrutinizer/g/shahradelahi/easy-http/master.svg?style=flat)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?b=master)
 [![Latest Stable Version](https://img.shields.io/packagist/v/shahradelahi/easy-http.svg)](https://packagist.org/packages/shahradelahi/easy-http)
 [![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D8.0-8892BF.svg)](https://php.net/)
@@ -47,14 +47,14 @@ php composer.phar require "shahradelahi/easy-http"
 
 #### Windows:
 
-[Download installer for Windows](https://github.com/jaggedsoft/php-binance-api/#installing-on-windows)
+[Download installer for Windows](https://getcomposer.org/doc/00-intro.md#installation-windows)
 
 </details>
 
 #### Getting started
 
 ```php
-$client = new \EasyHttp\Client();
+$client = new \EasyHttp\HttpClient();
 $response = $client->get('https://httpbin.org/get');
 
 echo $response->getStatusCode(); // 200
@@ -73,29 +73,8 @@ open [an issue](https://github.com/shahradelahi/easy-http/issues/new).
 * [Breakdown of a large request into pieces](/docs/breakdown-large-request.md)
 * [Send multiple requests at once](/docs/send-multiple-requests.md)
 * [Download large files](/examples/download/download-large-file.php)
+* [Upload multiple files](/examples/upload/upload-multiple-files.php)
 
 ### License
 
-```
-MIT License
-
-Copyright (c) 2021 Shahrad Elahi
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+EasyHttp is licensed under the MIT License - see the [LICENSE](/LICENSE) file for details

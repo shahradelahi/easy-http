@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Contracts;
 
@@ -12,16 +12,16 @@ namespace EasyHttp\Contracts;
 interface ConnectionContract
 {
 
-	public function send(string $data): void;
+    public function send(string $data): void;
 
-	public function close(): void;
+    public function close(): void;
 
-	public function getUniqueSocketId(): int;
+    public function getUniqueSocketId(): int;
 
-	public function getPeerName(): string;
+    public function getPeerName(): string;
 
-	public function broadCast(string $data): void;
+    public function broadCast(string $data): void;
 
-	public function broadCastMany(array $data, int $delay): void;
+    public function broadCastMany(array $data, int $delay): void;
 
 }

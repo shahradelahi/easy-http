@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Utils;
 
@@ -93,45 +93,45 @@ class Toolkit
      */
     public static function insensitiveString(string $string, string $value): bool
     {
-        return (bool)preg_match_all('/' . $value . '/i', $string);
+        return preg_match_all('/' . $value . '/i', $string) !== 0;
     }
 
-	/**
-	 * Millisecond sleep
-	 *
-	 * @param int $milliseconds The milliseconds
-	 * @return void
-	 */
-	public static function sleep(int $milliseconds): void
-	{
-		usleep($milliseconds * 1000);
-	}
+    /**
+     * Millisecond sleep
+     *
+     * @param int $milliseconds The milliseconds
+     * @return void
+     */
+    public static function sleep(int $milliseconds): void
+    {
+        usleep($milliseconds * 1000);
+    }
 
-	/**
-	 * Get current time in milliseconds
-	 *
-	 * @return int
-	 */
-	public static function time(): int
-	{
-		return (int)(microtime(true) * 1000);
-	}
+    /**
+     * Get current time in milliseconds
+     *
+     * @return int
+     */
+    public static function time(): int
+    {
+        return (int)(microtime(true) * 1000);
+    }
 
-	/**
-	 * Helper to convert a binary to a string of '0' and '1'.
-	 *
-	 * @param string $string
-	 * @return string
-	 */
-	public static function sprintB(string $string): string
-	{
-		$return = '';
-		$strLen = strlen($string);
-		for ($i = 0; $i < $strLen; $i++) {
-			$return .= sprintf('%08b', ord($string[$i]));
-		}
+    /**
+     * Helper to convert a binary to a string of '0' and '1'.
+     *
+     * @param string $string
+     * @return string
+     */
+    public static function sprintB(string $string): string
+    {
+        $return = '';
+        $strLen = strlen($string);
+        for ($i = 0; $i < $strLen; $i++) {
+            $return .= sprintf('%08b', ord($string[$i]));
+        }
 
-		return $return;
-	}
+        return $return;
+    }
 
 }

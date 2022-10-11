@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp;
 
@@ -24,237 +24,241 @@ use EasyHttp\Traits\WSConnectionTrait;
 class WebSocket implements WscCommonsContract
 {
 
-	use WSClientTrait;
-	use WSConnectionTrait;
+    use WSClientTrait;
+    use WSConnectionTrait;
 
-	/**
-	 * App version
-	 *
-	 * @var string
-	 */
-	public const VERSION = 'v1.2.0';
+    /**
+     * App version
+     *
+     * @var string
+     */
+    public const VERSION = 'v1.2.1';
 
-	/**
-	 * @var resource|bool
-	 */
-	private $socket;
+    /**
+     * @var array|int[]
+     */
+    private static array $opcodes = [
+        CommonsContract::EVENT_TYPE_CONTINUATION => 0,
+        CommonsContract::EVENT_TYPE_TEXT => 1,
+        CommonsContract::EVENT_TYPE_BINARY => 2,
+        CommonsContract::EVENT_TYPE_CLOSE => 8,
+        CommonsContract::EVENT_TYPE_PING => 9,
+        CommonsContract::EVENT_TYPE_PONG => 10,
+    ];
 
-	/**
-	 * @var string
-	 */
-	private string $lastOpcode;
+    /**
+     * @var WebSocketConfig
+     */
+    protected WebSocketConfig $config;
 
-	/**
-	 * @var float|int
-	 */
-	private float|int $closeStatus;
+    /**
+     * @var string
+     */
+    protected string $socketUrl;
 
-	/**
-	 * @var string|null
-	 */
-	private ?string $hugePayload;
+    /**
+     * @var resource|bool
+     */
+    private $socket;
 
-	/**
-	 * @var WebSocketConfig
-	 */
-	protected WebSocketConfig $config;
+    /**
+     * @var string
+     */
+    private string $lastOpcode;
 
-	/**
-	 * @var string
-	 */
-	protected string $socketUrl;
+    /**
+     * @var float|int
+     */
+    private float|int $closeStatus;
 
-	/**
-	 * @var array|int[]
-	 */
-	private static array $opcodes = [
-		CommonsContract::EVENT_TYPE_CONTINUATION => 0,
-		CommonsContract::EVENT_TYPE_TEXT => 1,
-		CommonsContract::EVENT_TYPE_BINARY => 2,
-		CommonsContract::EVENT_TYPE_CLOSE => 8,
-		CommonsContract::EVENT_TYPE_PING => 9,
-		CommonsContract::EVENT_TYPE_PONG => 10,
-	];
+    /**
+     * @var string|null
+     */
+    private ?string $hugePayload;
 
-	/**
-	 * Sets parameters for Web Socket Client intercommunication
-	 *
-	 * @param ?SocketClient $client leave it empty if you want to use default socket client
-	 */
-	public function __construct(?SocketClient $client = null)
-	{
-		if ($client instanceof SocketClient) {
+    /**
+     * Sets parameters for Web Socket Client intercommunication
+     *
+     * @param ?SocketClient $client leave it empty if you want to use default socket client
+     */
+    public function __construct(?SocketClient $client = null)
+    {
+        if ($client instanceof SocketClient) {
 
-			$this->onOpen = function ($socket) use ($client) {
-				$client->onOpen($socket);
-			};
+            $this->on('open', function ($socket) use ($client) {
+                $client->onOpen($socket);
+            });
 
-			$this->onClose = function ($socket, int $closeStatus) use ($client) {
-				$client->onClose($socket, $closeStatus);
-			};
+            $this->on('close', function ($socket, int $closeStatus) use ($client) {
+                $client->onClose($socket, $closeStatus);
+            });
 
-			$this->onError = function ($socket, WebSocketException $exception) use ($client) {
-				$client->onError($socket, $exception);
-			};
+            $this->on('error', function ($socket, WebSocketException $exception) use ($client) {
+                $client->onError($socket, $exception);
+            });
 
-			$this->onMessage = function ($socket, string $message) use ($client) {
-				$client->onMessage($socket, $message);
-			};
-		}
+            $this->on('message', function ($socket, string $message) use ($client) {
+                $client->onMessage($socket, $message);
+            });
 
-		$this->config = $config ?? new WebSocketConfig();
-	}
+            $this->on('meantime', function ($socket) use ($client) {
+                $client->onMeantime($socket);
+            });
+        }
 
-	/**
-	 * Init a proxy connection
-	 *
-	 * @return resource|false
-	 * @throws \InvalidArgumentException
-	 * @throws ConnectionException
-	 */
-	private function proxy()
-	{
-		$sock = @stream_socket_client(
-			WscCommonsContract::TCP_SCHEME . $this->config->getProxyIp() . ':' . $this->config->getProxyPort(),
-			$errno,
-			$errstr,
-			$this->config->getTimeout(),
-			STREAM_CLIENT_CONNECT,
-			$this->getStreamContext()
-		);
+        $this->config = $config ?? new WebSocketConfig();
+    }
 
-		$write = "CONNECT {$this->config->getProxyIp()}:{$this->config->getProxyPort()} HTTP/1.1\r\n";
-		$auth = $this->config->getProxyAuth();
+    /**
+     * @param int $timeout
+     * @param null $microSecs
+     *
+     * @return void
+     */
+    public function setTimeout(int $timeout, $microSecs = null): void
+    {
+        $this->config->setTimeout($timeout);
+        if ($this->socket && get_resource_type($this->socket) === 'stream') {
+            stream_set_timeout($this->socket, $timeout, $microSecs ?? 0);
+        }
+    }
 
-		if ($auth !== NULL) {
-			$write .= "Proxy-Authorization: Basic {$auth}\r\n";
-		}
+    /**
+     * @param string $name
+     * @param array $arguments
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
 
-		$write .= "\r\n";
-		fwrite($sock, $write);
-		$resp = fread($sock, 1024);
+        if (method_exists($this, $name)) {
+            return call_user_func_array([$this, $name], $arguments);
+        }
 
-		if (preg_match(self::PROXY_MATCH_RESP, $resp) === 1) {
-			return $sock;
-		}
+        if (str_starts_with($name, 'get')) {
+            $property = lcfirst(substr($name, 3));
 
-		throw new ConnectionException('Failed to connect to the host via proxy');
-	}
+            if (property_exists($this, $property)) {
+                return $this->{$property};
+            }
+        }
 
-	/**
-	 * @return mixed
-	 * @throws \InvalidArgumentException
-	 */
-	private function getStreamContext(): mixed
-	{
-		if ($this->config->getContext() !== null) {
-			// Suppress the error since we'll catch it below
-			if (@get_resource_type($this->config->getContext()) === 'stream-context') {
-				return $this->config->getContext();
-			}
+        if (str_starts_with($name, 'set')) {
+            $property = lcfirst(substr($name, 3));
+            if (property_exists($this, $property)) {
+                $this->{$property} = $arguments[0];
+                return $this;
+            }
+        }
 
-			throw new \InvalidArgumentException(
-				'Stream context is invalid',
-				CommonsContract::CLIENT_INVALID_STREAM_CONTEXT
-			);
-		}
+        throw new \Exception(sprintf("Method '%s' does not exist.", $name));
+    }
 
-		return stream_context_create($this->config->getContextOptions());
-	}
+    /**
+     * Init a proxy connection
+     *
+     * @return resource|false
+     * @throws \InvalidArgumentException
+     * @throws ConnectionException
+     */
+    private function proxy()
+    {
+        $sock = @stream_socket_client(
+            WscCommonsContract::TCP_SCHEME . $this->config->getProxyIp() . ':' . $this->config->getProxyPort(),
+            $errno,
+            $errstr,
+            $this->config->getTimeout(),
+            STREAM_CLIENT_CONNECT,
+            $this->getStreamContext()
+        );
 
-	/**
-	 * @param mixed $urlParts
-	 *
-	 * @return string
-	 */
-	private function getPathWithQuery(mixed $urlParts): string
-	{
-		$path = $urlParts['path'] ?? '/';
-		$query = $urlParts['query'] ?? '';
-		$fragment = $urlParts['fragment'] ?? '';
-		$pathWithQuery = $path;
+        $write = "CONNECT {$this->config->getProxyIp()}:{$this->config->getProxyPort()} HTTP/1.1\r\n";
+        $auth = $this->config->getProxyAuth();
 
-		if (!empty($query)) {
-			$pathWithQuery .= '?' . $query;
-		}
+        if ($auth !== NULL) {
+            $write .= "Proxy-Authorization: Basic {$auth}\r\n";
+        }
 
-		if (!empty($fragment)) {
-			$pathWithQuery .= '#' . $fragment;
-		}
+        $write .= "\r\n";
+        fwrite($sock, $write);
+        $resp = fread($sock, 1024);
 
-		return $pathWithQuery;
-	}
+        if (preg_match(self::PROXY_MATCH_RESP, $resp) === 1) {
+            return $sock;
+        }
 
-	/**
-	 * @param string $pathWithQuery
-	 * @param array $headers
-	 *
-	 * @return string
-	 */
-	private function getHeaders(string $pathWithQuery, array $headers): string
-	{
-		return 'GET ' . $pathWithQuery . " HTTP/1.1\r\n"
-			. implode(
-				"\r\n",
-				array_map(
-					function ($key, $value) {
-						return "$key: $value";
-					},
-					array_keys($headers),
-					$headers
-				)
-			)
-			. "\r\n\r\n";
-	}
+        throw new ConnectionException('Failed to connect to the host via proxy');
+    }
 
-	/**
-	 * @param int $timeout
-	 * @param null $microSecs
-	 *
-	 * @return void
-	 */
-	public function setTimeout(int $timeout, $microSecs = null): void
-	{
-		$this->config->setTimeout($timeout);
-		if ($this->socket && get_resource_type($this->socket) === 'stream') {
-			stream_set_timeout($this->socket, $timeout, $microSecs);
-		}
-	}
+    /**
+     * @return mixed
+     * @throws \InvalidArgumentException
+     */
+    private function getStreamContext(): mixed
+    {
+        if ($this->config->getContext() !== null) {
+            // Suppress the error since we'll catch it below
+            if (@get_resource_type($this->config->getContext()) === 'stream-context') {
+                return $this->config->getContext();
+            }
 
-	/**
-	 * @param string $name
-	 * @param array $arguments
-	 *
-	 * @return mixed
-	 * @throws \Exception
-	 */
-	public function __call(string $name, array $arguments): mixed
-	{
-		if (property_exists($this, $name)) {
-			return $this->$name;
-		}
+            throw new \InvalidArgumentException(
+                'Stream context is invalid',
+                CommonsContract::CLIENT_INVALID_STREAM_CONTEXT
+            );
+        }
 
-		if (method_exists($this, $name)) {
-			return call_user_func_array([$this, $name], $arguments);
-		}
+        return stream_context_create($this->config->getContextOptions());
+    }
 
-		if (str_starts_with($name, 'get')) {
-			$property = lcfirst(substr($name, 3));
+    /**
+     * @param mixed $urlParts
+     *
+     * @return string
+     */
+    private function getPathWithQuery(mixed $urlParts): string
+    {
+        $path = $urlParts['path'] ?? '/';
+        $query = $urlParts['query'] ?? '';
+        $fragment = $urlParts['fragment'] ?? '';
+        $pathWithQuery = $path;
 
-			if (property_exists($this, $property)) {
-				return $this->{$property};
-			}
-		}
+        if (!empty($query)) {
+            $pathWithQuery .= '?' . $query;
+        }
 
-		if (str_starts_with($name, 'set')) {
-			$property = lcfirst(substr($name, 3));
-			if (property_exists($this, $property)) {
-				$this->{$property} = $arguments[0];
-				return $this;
-			}
-		}
+        if (!empty($fragment)) {
+            $pathWithQuery .= '#' . $fragment;
+        }
 
-		throw new \Exception(sprintf("Method '%s' does not exist.", $name));
-	}
+        return $pathWithQuery;
+    }
+
+    /**
+     * @param string $pathWithQuery
+     * @param array $headers
+     *
+     * @return string
+     */
+    private function getHeaders(string $pathWithQuery, array $headers): string
+    {
+        return 'GET ' . $pathWithQuery . " HTTP/1.1\r\n"
+            . implode(
+                "\r\n",
+                array_map(
+                    function ($key, $value) {
+                        return "$key: $value";
+                    },
+                    array_keys($headers),
+                    $headers
+                )
+            )
+            . "\r\n\r\n";
+    }
 
 }

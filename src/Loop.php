@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp;
 
@@ -14,36 +14,36 @@ use EasyHttp\Utils\Toolkit;
 class Loop
 {
 
-	/**
-	 * Whether the loop is running or not
-	 *
-	 * @var bool
-	 */
-	protected static bool $running = false;
+    /**
+     * Whether the loop is running or not
+     *
+     * @var bool
+     */
+    protected static bool $running = false;
 
-	/**
-	 * @param callable $callback
-	 * @param int $interval in milliseconds
-	 * @return void
-	 */
-	public static function run(callable $callback, int $interval = 500): void
-	{
-		static::$running = true;
-		$last_hit = Toolkit::time();
-		while (static::$running) {
-			if (Toolkit::time() - $last_hit > $interval) {
-				$callback();
-				$last_hit = Toolkit::time();
-			}
-		}
-	}
+    /**
+     * @param callable $callback
+     * @param int $interval in milliseconds
+     * @return void
+     */
+    public static function run(callable $callback, int $interval = 500): void
+    {
+        static::$running = true;
+        $last_hit = Toolkit::time();
+        while (static::$running) {
+            if (Toolkit::time() - $last_hit > $interval) {
+                $callback();
+                $last_hit = Toolkit::time();
+            }
+        }
+    }
 
-	/**
-	 * @return void
-	 */
-	public static function stop(): void
-	{
-		static::$running = false;
-	}
+    /**
+     * @return void
+     */
+    public static function stop(): void
+    {
+        static::$running = false;
+    }
 
 }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Contracts;
 
@@ -15,24 +15,30 @@ use EasyHttp\WebSocket;
 interface WebSocketContract
 {
 
-	/**
-	 * @param WebSocket $socket
-	 * @return void
-	 */
-	public function onOpen(WebSocket $socket): void;
+    /**
+     * @param WebSocket $socket
+     * @return void
+     */
+    public function onOpen(WebSocket $socket): void;
 
-	/**
-	 * @param WebSocket $socket
-	 * @param int $closeStatus
-	 * @return void
-	 */
-	public function onClose(WebSocket $socket, int $closeStatus): void;
+    /**
+     * @param WebSocket $socket
+     * @param int $closeStatus
+     * @return void
+     */
+    public function onClose(WebSocket $socket, int $closeStatus): void;
 
-	/**
-	 * @param WebSocket $socket
-	 * @param WebSocketException $exception
-	 * @return void
-	 */
-	public function onError(WebSocket $socket, WebSocketException $exception): void;
+    /**
+     * @param WebSocket $socket
+     * @param WebSocketException $exception
+     * @return void
+     */
+    public function onError(WebSocket $socket, WebSocketException $exception): void;
+
+    /**
+     * @param WebSocket $socket
+     * @return void
+     */
+    public function onMeantime(WebSocket $socket): void;
 
 }

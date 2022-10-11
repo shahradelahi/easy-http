@@ -1,10 +1,12 @@
 # Breakdown of Large Request
 
-On this page, we will show you how to break down a large request into smaller requests and make the process of sending the requests easier and faster.
+On this page, we will show you how to break down a large request into smaller requests and make the process of sending
+the requests easier and faster.
 
 <br/>
 
 #### Table of Contents
+
 - [Initialize Environments](#initialize-environments)
 - [Normal CURL](#normal-curl)
     - [Send the request](#normal-curl-send-the-request)
@@ -16,15 +18,19 @@ On this page, we will show you how to break down a large request into smaller re
 <br/>
 
 ### Getting Started
-The following is a breakdown of the request we will get data from `API` of `TradingView` and the source code of this example is available at [here](../examples/bulk-request/breakdown-large-request.php).
+
+The following is a breakdown of the request we will get data from `API` of `TradingView` and the source code of this
+example is available at [here](../examples/bulk-request/breakdown-large-request.php).
 
 <br/>
 
 #### Initialize Environments
+
 The `$postData` variable is the data that we will send to the API and you can customize it to your needs.
+
 ```php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
-$client = new \EasyHttp\Client();
+$client = new \EasyHttp\HttpClient();
 $endPoint = 'https://scanner.tradingview.com/america/scan';
 $postData = [
     'filter' => [
@@ -70,9 +76,11 @@ $postData = [
 <br/>
 
 ### Normal CURL
+
 On this part we will show you how to send the request using the normal CURL.
 
 #### Normal CURL: Send the request
+
 ```php
 $startTime = microtime(true);
 $response = $client->post($endPoint, [
@@ -93,9 +101,11 @@ echo '<pre>' . "Normal CURL - Total time: " . (microtime(true) - $startTime) . "
 <br/>
 
 ### Bulk Request
+
 On this part we will show you how to send the request using the bulk request.
 
 #### Bulk Request: Create Requests
+
 ```php
 $requests = [];
 for ($i = 0; $i < 2000; $i += 500) {
@@ -120,12 +130,13 @@ for ($i = 0; $i < 2000; $i += 500) {
 #### Bulk Request: Send Requests
 
 ```php
-
 $start = microtime(true);
 $responses = $client->bulk($requests);
+
 foreach ($responses as $response) {
     $Data = json_decode($response->getBody(), true);
 }
+
 $Memory = \EasyHttp\Utils\Toolkit::bytesToHuman(memory_get_usage());
 echo '<pre>' . "Bulk Request - Total time: " . (microtime(true) - $start) . " - Memory: $Memory" . '</pre>';
 ```
@@ -133,7 +144,9 @@ echo '<pre>' . "Bulk Request - Total time: " . (microtime(true) - $start) . " - 
 <br/>
 
 #### Result
+
 The result of this example is showing us that the bulk request is much faster than the normal request.
+
 ```txt
 Normal CURL - Total time: 6.0051791667938 - Memory: 10.21 MiB
 Bulk Request - Total time: 2.0174889564514 - Memory: 7.91 MiB

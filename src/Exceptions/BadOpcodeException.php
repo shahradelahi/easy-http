@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace EasyHttp\Exceptions;
 
@@ -9,7 +9,7 @@ namespace EasyHttp\Exceptions;
  * @author  Shahrad Elahi (https://github.com/shahradelahi)
  * @license https://github.com/shahradelahi/easy-http/blob/master/LICENSE (MIT License)
  */
-class BadOpcodeException extends \Exception
+class BadOpcodeException extends \RuntimeException
 {
 
 }
