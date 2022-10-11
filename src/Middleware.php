@@ -201,8 +201,4 @@ class Middleware
         return true;
     }
 
-    /**
-     * Stream connect
-     */
-
 }

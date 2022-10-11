@@ -4,7 +4,6 @@ namespace EasyHttp\Traits;
 
 use EasyHttp\Contracts\CommonsContract;
 use EasyHttp\Exceptions\BadOpcodeException;
-use EasyHttp\Exceptions\BadUriException;
 use EasyHttp\Exceptions\ConnectionException;
 use EasyHttp\Exceptions\WebSocketException;
 use EasyHttp\WebSocketConfig;
@@ -137,6 +136,7 @@ trait WSConnectionTrait
      * Receives message client<-server
      *
      * @return string|null
+     * @throws ConnectionException
      */
     public function receive(): string|null
     {
@@ -155,8 +155,7 @@ trait WSConnectionTrait
     /**
      * @param string $socketUrl string that represents the URL of the Web Socket server. e.g. ws://localhost:1337 or wss://localhost:1337
      * @param ?WebSocketConfig $config The configuration for the Web Socket client
-     * @throws BadUriException
-     * @throws \Exception
+     * @throws ConnectionException
      */
     public function connect(string $socketUrl, ?WebSocketConfig $config = null): void
     {
@@ -247,31 +246,17 @@ trait WSConnectionTrait
      */
     private function safeCall(string $type, ...$args): void
     {
-        echo "safeCall: $type\n";
-        if (is_callable($this->registeredEvents[$type])) {
-            try {
-                call_user_func_array($this->registeredEvents[$type], $args);
+        if (isset($this->registeredEvents[$type])) {
 
-            } catch (\Exception $e) {
-                echo "EE:" . gettype($this->registeredEvents['error']);
-                if (is_callable($this->registeredEvents['error'])) {
-                    call_user_func_array($this->registeredEvents['error'], [$this, $e]);
-                }
+            if (is_callable($this->registeredEvents[$type])) {
+                call_user_func_array($this->registeredEvents[$type], $args);
+                return;
             }
 
-            return;
-
-        } elseif (is_callable($this->registeredEvents['error'])) {
-            call_user_func_array($this->registeredEvents['error'], [$this, new WebSocketException(
-                "The event '{$type}' is not callable.",
-                CommonsContract::CLIENT_EVENT_NOT_CALLABLE
-            )]);
-            return;
+            throw new WebSocketException(sprintf(
+                "The event '%s' is not callable.", $type
+            ), CommonsContract::CLIENT_EVENT_NOT_CALLABLE);
         }
-
-        throw new WebSocketException(sprintf(
-            "The event '%s' is not callable.", $type
-        ), CommonsContract::CLIENT_EVENT_NOT_CALLABLE);
     }
 
     /**

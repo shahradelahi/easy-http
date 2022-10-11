@@ -21,6 +21,7 @@ trait WSClientTrait
 
     /**
      * @return string|null
+     * @throws ConnectionException
      */
     protected function receiveFragment(): string|null
     {
@@ -271,7 +272,6 @@ trait WSClientTrait
      * Sec-WebSocket-Key generator
      *
      * @return string   the 16 character length key
-     * @throws \Exception
      */
     private function generateKey(): string
     {
@@ -279,7 +279,7 @@ trait WSClientTrait
         $key = '';
         $chLen = strlen($chars);
         for ($i = 0; $i < self::KEY_GEN_LENGTH; $i++) {
-            $key .= $chars[random_int(0, $chLen - 1)];
+            $key .= $chars[rand(0, $chLen - 1)];
         }
 
         return base64_encode($key);

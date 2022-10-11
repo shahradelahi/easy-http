@@ -11,11 +11,7 @@ use EasyHttp\WebSocketConfig;
 class WebSocketClientTest extends \PHPUnit\Framework\TestCase
 {
 
-    private const WS_SCHEME = 'wss://';
-    private const WS_HOST = 'socket.litehex.us';
-    private const WS_PATH = '/';
-
-    private string $url = self::WS_SCHEME . self::WS_HOST . self::WS_PATH;
+    private string $url = "wss://socket.litehex.us/";
 
     public function testIsConnected(): void
     {
@@ -33,19 +29,17 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
             echo $message;
         });
 
-        $ws->connect($this->url);
+        $ws->connect($this->url, (new WebSocketConfig())->setHeaders([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ]
+        ]));
     }
 
-    /**
-     * @return void
-     * @throws \Exception
-     */
     public function testHeadersAreWorking(): void
     {
         $randomString = Toolkit::randomString(32);
-        $config = (new WebSocketConfig())->setHeaders([
-            'X-Subscribe-With' => $randomString,
-        ]);
 
         $ws = new WebSocket();
 
@@ -59,7 +53,13 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
             $socket->close();
         });
 
-        $ws->connect($this->url, $config);
+        $ws->connect($this->url, (new WebSocketConfig())->setHeaders([
+            'X-Subscribe-With' => $randomString,
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ]
+        ]));
     }
 
     /**
@@ -83,18 +83,23 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
             ];
         }
 
-        $socket = new WebSocket();
+        $ws = new WebSocket();
 
-        $socket->onOpen = function (WebSocket $socket) use ($sendMe) {
+        $ws->on('open', function (WebSocket $socket) use ($sendMe) {
             $socket->send(json_encode($sendMe));
-        };
+        });
 
-        $socket->onMessage = function (WebSocket $socket, $message) use ($sendMe) {
+        $ws->on('message', function (WebSocket $socket, $message) use ($sendMe) {
             $this->assertEquals('Message: ' . json_encode($sendMe), $message);
             $socket->close();
-        };
+        });
 
-        $socket->connect($this->url);
+        $ws->connect($this->url, (new WebSocketConfig())->setHeaders([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ]
+        ]));
     }
 
     /**
@@ -103,7 +108,7 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
      */
     public function testWithClient(): void
     {
-        $socket = new WebSocket(new class extends SocketClient {
+        $ws = new WebSocket(new class extends SocketClient {
 
             public function onOpen(WebSocket $socket): void
             {
@@ -132,8 +137,14 @@ class WebSocketClientTest extends \PHPUnit\Framework\TestCase
 
         });
 
-        $socket->connect($this->url);
-        $this->assertFalse($socket->isConnected());
+        $ws->connect($this->url, (new WebSocketConfig())->setHeaders([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ]
+        ]));
+
+        $this->assertFalse($ws->isConnected());
     }
 
 }
