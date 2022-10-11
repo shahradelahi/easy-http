@@ -4,7 +4,7 @@
 # Easy Http
 
 [![Build Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/build.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/build-status/master)
-[![Coverage Status](https://coveralls.io/repos/shahradelahi/easy-http/badge.png?branch=master)](https://coveralls.io/r/shahradelahi/easy-http?branch=master)
+[![Coverage Status](https://scrutinizer-ci.com/g/shahradelahi/easy-http/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?branch=master)
 [![Code Quality](https://img.shields.io/scrutinizer/g/shahradelahi/easy-http/master.svg?style=flat)](https://scrutinizer-ci.com/g/shahradelahi/easy-http/?b=master)
 [![Latest Stable Version](https://img.shields.io/packagist/v/shahradelahi/easy-http.svg)](https://packagist.org/packages/shahradelahi/easy-http)
 [![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D8.0-8892BF.svg)](https://php.net/)
@@ -47,7 +47,7 @@ php composer.phar require "shahradelahi/easy-http"
 
 #### Windows:
 
-[Download installer for Windows](https://github.com/jaggedsoft/php-binance-api/#installing-on-windows)
+[Download installer for Windows](https://getcomposer.org/doc/00-intro.md#installation-windows)
 
 </details>
 
